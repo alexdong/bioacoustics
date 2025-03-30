@@ -1,67 +1,26 @@
-[project]
-name = "query-reformulation"
-version = "0.1.0"
-description = "Reformulate queries using a transformer model."
-readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
-    "accelerate>=1.0.1",
-    "click>=8.1.8",
-    "datasets>=3.1.0",
-    "evaluate>=0.4.3",
-    "google>=3.0.0",
-    "gradio>=4.44.1",
-    "httpx>=0.27.2",
-    "ipython>=8.12.3",
-    "jinja2>=3.1.6",
-    "levenshtein>=0.25.1",
-    "ollama>=0.4.7",
-    "openai>=1.66.3",
-    "peft; sys_platform == 'linux'",
-    "protobuf>=5.29.3",
-    "rich>=13.8.1",
-    "ruff>=0.9.10",
-    "sentencepiece>=0.2.0",
-    "torch>=2.5.1",
-    "transformers>=4.46.3",
-]
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "UP", "N", "ANN"] # Example selection, tailor this
+ignore = ["ANN101", "ANN102", "ANN401"] # Ignore missing types for self/cls, Any types if necessary initially
 
-[tool.setuptools.packages.find]
-include = [
-  "train*", 
-  "utils*", 
-  "models*", 
-  "benchmark*", 
-  "queries*", 
-  "data*", 
-  "subqueries*", 
-  "client*",
-  "facts*"
-]
-exclude = [
-  "models/sft-*",
-  "models/peft-*",
-]
+[tool.ruff.lint.isort]
+known-first-party = ["birdclef_fine_tune"] # Tell isort about your project structure
 
-[tool.uv]
-dev-dependencies = [
-    "ruff>=0.6.7",
-]
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true # Start with this, try to remove later by adding stubs
+# Add plugin for torch if needed for better type inference
+# plugins = ["torch.distributed.mypy_plugin"] # Example
 
-[tool.ruff.lint]
-select = [
-    "ANN",
-    "COM812",
-    "E",
-    "F",
-    "I",
-    "W",
-]
-ignore = [
-    "D",
-    "EM102",
-    "E501",
-    "PLR0913",
-    "TRY003",
-    "W293",
-]
+[tool.pyright]
+include = ["birdclef_fine_tune"]
+exclude = ["**/node_modules", "**/__pycache__", "birdclef_fine_tune/stubs"]
+stubPath = "birdclef_fine_tune/stubs"
+reportMissingImports = "warning" # Or "error" for stricter checks
+reportUndefinedVariable = "error"
+pythonVersion = "3.12"
+# Add venvs paths if needed
+# venvPath = "."
+# venv = ".venv"
