@@ -3,7 +3,7 @@
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Optional, Union
 
 import config  # Import config variables
 import model  # Import the model module
@@ -29,7 +29,7 @@ def train_model(
     val_loader: DataLoader | None,
     distance_matrix_np: NumpyDistanceMatrix,
     optimizer: optim.Optimizer,
-    scheduler: Any, # Scheduler type can vary
+    scheduler: Optional[Union[torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau]], # Scheduler type can vary
     num_epochs: int,
     device: Device,
     checkpoint_dir: Path,
@@ -157,7 +157,7 @@ if __name__ == "__main__":
             self.config = type('obj', (object,), {'d_model': feature_size})() # Mock config
             self.dummy_layer = nn.Linear(config.N_MELS * 10, self.feature_size) # Rough size match
 
-        def forward(self, input_features: Tensor) -> Any:
+        def forward(self, input_features: Tensor) -> object:
              # Flatten N_MELS and some time dim for Linear input
              bs, n_mels, n_frames = input_features.shape
              # Need a fixed size input for linear, this is tricky without real encoder
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     dummy_train_loader = DataLoader(dummy_train_dataset, batch_size=config.BATCH_SIZE)
     dummy_val_loader = DataLoader(dummy_val_dataset, batch_size=config.BATCH_SIZE)
     dummy_dist_matrix_np = np.array([ # 4x4
-        [0, 2, 6, 8], [2, 0, 2, 6], [6, 2, 0, 2], [8, 6, 2, 0]
+        [0, 2, 6, 8], [2, 0, 2, 6], [6, 2, 0, 2], [8, 6, 2, 0],
     ], dtype=np.float32)
 
     # Separate params for differential learning rate
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     head_params = dummy_model.classifier_head.parameters()
     dummy_optimizer = optim.AdamW([
         {'params': encoder_params, 'lr': config.LEARNING_RATE_ENCODER},
-        {'params': head_params, 'lr': config.LEARNING_RATE_HEAD}
+        {'params': head_params, 'lr': config.LEARNING_RATE_HEAD},
     ], weight_decay=config.WEIGHT_DECAY)
 
     dummy_scheduler = ReduceLROnPlateau(dummy_optimizer, 'min', patience=2, factor=0.5)

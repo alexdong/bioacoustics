@@ -1,5 +1,4 @@
 # ssl/config.py
-"""Configuration settings for the SSL pre-training process."""
 
 from pathlib import Path
 

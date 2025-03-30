@@ -1,10 +1,9 @@
 # model.py
-"""Defines the fine-tuning model architecture."""
 
-from pathlib import Path  # Add this import
+from pathlib import Path
 from typing import Optional
 
-import config  # Import config variables
+import config
 import torch
 import torch.nn as nn
 from transformers import WhisperConfig, WhisperModel
@@ -27,7 +26,7 @@ def build_model(
     # Load the Whisper encoder part
     print(f"[MODEL] Loading base Whisper encoder: openai/whisper-{config.WHISPER_MODEL_SIZE}")
     whisper_model = WhisperModel.from_pretrained(
-        f"openai/whisper-{config.WHISPER_MODEL_SIZE}", config=whisper_config
+        f"openai/whisper-{config.WHISPER_MODEL_SIZE}", config=whisper_config,
     )
     encoder = whisper_model.get_encoder()
 

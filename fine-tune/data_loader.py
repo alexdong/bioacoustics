@@ -24,7 +24,7 @@ def create_dataloaders(
     batch_size: int,
     num_workers: int,
     val_split: float = 0.2,
-    random_state: int = 42
+    random_state: int = 42,
 ) -> tuple[DataLoader, DataLoader | None]:
     """
     Creates training and validation dataloaders.
@@ -57,7 +57,7 @@ def create_dataloaders(
             full_df,
             test_size=val_split,
             random_state=random_state,
-            stratify=strat_labels
+            stratify=strat_labels,
         )
 
         # Reset indices
@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
         print("[DEMO] Creating dummy DataLoader...")
         dataloader, _ = create_dataloaders(
-            dummy_meta_path, dummy_audio_dir, dummy_species, batch_size=2, num_workers=0
+            dummy_meta_path, dummy_audio_dir, dummy_species, batch_size=2, num_workers=0,
         )
         print("[DEMO] Getting first batch...")
         batch_mels, batch_labels = next(iter(dataloader))

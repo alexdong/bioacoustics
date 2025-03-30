@@ -50,7 +50,7 @@ def predict_on_dataset(
 def load_model_for_inference(
     checkpoint_path: Path,
     num_classes: int,
-    device: Device
+    device: Device,
 ) -> nn.Module:
     """Loads model structure and weights from a checkpoint."""
     print(f"[PREDICT] Loading model from checkpoint: {checkpoint_path}")

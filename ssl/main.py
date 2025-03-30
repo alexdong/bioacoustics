@@ -1,9 +1,7 @@
 # ssl/main.py
-"""Main script to run the SSL MAE pre-training process."""
 
 import random
 
-# Import local SSL modules
 import config as ssl_config
 import data_loader as ssl_data_loader
 import model as ssl_model
@@ -11,7 +9,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 import trainer as ssl_trainer
-from torch.optim.lr_scheduler import CosineAnnealingLR  # Example scheduler
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 
 def set_seed(seed: int) -> None:
@@ -51,7 +49,7 @@ print("[SSL MAIN] Setting up optimizer and scheduler...")
 optimizer = optim.AdamW(
     mae_model.parameters(),
     lr=ssl_config.LEARNING_RATE,
-    weight_decay=ssl_config.WEIGHT_DECAY
+    weight_decay=ssl_config.WEIGHT_DECAY,
 )
 
 # Example scheduler: Cosine annealing over total training steps

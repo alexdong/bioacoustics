@@ -3,7 +3,7 @@
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Optional, Union
 
 # Use config settings from the ssl directory
 import config as ssl_config
@@ -27,7 +27,7 @@ def train_ssl_model(
     model: nn.Module, # The MAE model (encoder + decoder)
     train_loader: DataLoader,
     optimizer: optim.Optimizer,
-    scheduler: Any, # Scheduler type can vary
+    scheduler: Optional[Union[torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau]], # Scheduler type can vary
     num_epochs: int,
     device: Device,
     output_dir: Path, # Dir to save final encoder and optional MAE checkpoints
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     dummy_train_loader = DataLoader(
         dummy_train_dataset,
         batch_size=ssl_config.BATCH_SIZE,
-        collate_fn=data_loader._ssl_collate_fn # Use the collate fn
+        collate_fn=data_loader._ssl_collate_fn, # Use the collate fn
     )
 
     dummy_optimizer = optim.AdamW(dummy_mae_model.parameters(), lr=ssl_config.LEARNING_RATE)

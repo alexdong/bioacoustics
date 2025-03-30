@@ -1,9 +1,7 @@
 # main.py
-"""Main script to run the fine-tuning process."""
 
 import random
 
-# Import local modules
 import config
 import data_loader
 import model
@@ -13,7 +11,7 @@ import taxonomy
 import torch
 import torch.optim as optim
 import trainer
-from torch.optim.lr_scheduler import ReduceLROnPlateau  # Example scheduler
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # import predictor # Optional: if running prediction after training
 
@@ -53,7 +51,7 @@ if num_classes != config.NUM_CLASSES:
 print("[MAIN] Loading taxonomy and computing distance matrix...")
 try:
     _, distance_matrix_np = taxonomy.load_and_compute_distance_matrix(
-        config.TAXONOMY_PATH, species_list
+        config.TAXONOMY_PATH, species_list,
     )
     # Save distance matrix for potential reuse/analysis
     dist_matrix_path = config.TEMP_DIR / "distance_matrix.npy"
@@ -86,7 +84,7 @@ assert val_loader is not None, "Validation loader creation failed - required for
 print("[MAIN] Building model...")
 fine_tune_model = model.build_model(
     num_classes=num_classes,
-    encoder_checkpoint_path=config.ENCODER_CHECKPOINT_PATH
+    encoder_checkpoint_path=config.ENCODER_CHECKPOINT_PATH,
 )
 
 
@@ -97,7 +95,7 @@ encoder_params = fine_tune_model.encoder.parameters()
 head_params = fine_tune_model.classifier_head.parameters()
 optimizer = optim.AdamW([
     {'params': encoder_params, 'lr': config.LEARNING_RATE_ENCODER, 'weight_decay': config.WEIGHT_DECAY},
-    {'params': head_params, 'lr': config.LEARNING_RATE_HEAD, 'weight_decay': config.WEIGHT_DECAY} # Can have different WD if needed
+    {'params': head_params, 'lr': config.LEARNING_RATE_HEAD, 'weight_decay': config.WEIGHT_DECAY}, # Can have different WD if needed
 ])
 
 # Example scheduler: Reduce learning rate when validation loss plateaus

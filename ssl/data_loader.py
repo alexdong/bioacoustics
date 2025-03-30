@@ -53,7 +53,7 @@ def create_ssl_dataloader(
 
 # --- Masking Function ---
 def _random_masking(
-    features: Tensor, mask_ratio: float = 0.75
+    features: Tensor, mask_ratio: float = 0.75,
 ) -> tuple[Tensor, Tensor, Tensor]:
     """
     Performs random masking on the time dimension of a spectrogram.
@@ -154,7 +154,7 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
 
         # --- Apply Masking ---
         masked_mel_spec, original_mel_spec, mask_indices = _random_masking(
-            mel_spec, self.masking_ratio
+            mel_spec, self.masking_ratio,
         )
 
         # Type checks
@@ -168,7 +168,7 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
 
 # --- Custom Collate Function (Optional but Recommended) ---
 def _ssl_collate_fn(
-    batch: list[tuple[AudioTensor, AudioTensor, Tensor]]
+    batch: list[tuple[AudioTensor, AudioTensor, Tensor]],
 ) -> tuple[AudioTensor, AudioTensor, Tensor]:
     """Pads sequences within a batch and stacks tensors."""
     # Unzip the batch
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
         print("[DEMO] Creating dummy SSL DataLoader...")
         ssl_loader_demo = create_ssl_dataloader(
-            dummy_ssl_audio_dir, batch_size=4, num_workers=0
+            dummy_ssl_audio_dir, batch_size=4, num_workers=0,
         )
 
         print("[DEMO] Getting first batch...")

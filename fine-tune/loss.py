@@ -41,7 +41,7 @@ def hierarchical_distance_loss(
     # Use BCEWithLogitsLoss for numerical stability
     # Calculate element-wise loss *without* reduction
     bce_loss_elements = functional.binary_cross_entropy_with_logits(
-        logits, targets, reduction='none'
+        logits, targets, reduction='none',
     )
 
     # --- Calculate weights based on distance ---
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         [0, 2, 6, 8],
         [2, 0, 2, 6],
         [6, 2, 0, 2],
-        [8, 6, 2, 0]
+        [8, 6, 2, 0],
     ], dtype=torch.float32)
     alpha_demo = 0.5
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         print(f"  Alpha: {alpha_demo}")
 
         loss_val = hierarchical_distance_loss(
-            dummy_logits, dummy_targets, dummy_dist_matrix, alpha_demo
+            dummy_logits, dummy_targets, dummy_dist_matrix, alpha_demo,
         )
         print(f"\n[DEMO] Calculated Loss: {loss_val.item()}")
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         # Test case with no true positives
         dummy_targets_no_tp = torch.zeros_like(dummy_targets)
         loss_no_tp = hierarchical_distance_loss(
-             dummy_logits, dummy_targets_no_tp, dummy_dist_matrix, alpha_demo
+             dummy_logits, dummy_targets_no_tp, dummy_dist_matrix, alpha_demo,
         )
         # Should be equivalent to standard BCEWithLogitsLoss in this case
         standard_bce = functional.binary_cross_entropy_with_logits(dummy_logits, dummy_targets_no_tp)

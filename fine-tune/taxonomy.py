@@ -22,7 +22,7 @@ DistanceMatrix = np.ndarray
 
 # --- Top Level Function ---
 def load_and_compute_distance_matrix(
-    taxonomy_path: Path, species_list: list[Species]
+    taxonomy_path: Path, species_list: list[Species],
 ) -> tuple[dict[Species, Lineage], DistanceMatrix]:
     """Loads taxonomy, builds tree, and computes pairwise distance matrix."""
     print("[TAXONOMY] Loading taxonomy data...")
@@ -87,7 +87,7 @@ def _compute_taxonomic_distance(lineage1: Lineage, lineage2: Lineage) -> int:
     return dist
 
 def _compute_pairwise_distances(
-    lineage_map: dict[Species, Lineage], species_list: list[Species]
+    lineage_map: dict[Species, Lineage], species_list: list[Species],
 ) -> DistanceMatrix:
     """Computes the N x N distance matrix."""
     num_species = len(species_list)
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         'primary_label': ['sp_a1', 'sp_a2', 'sp_b1', 'sp_c1'],
         'genus':         ['gen_a', 'gen_a', 'gen_b', 'gen_c'],
         'family':        ['fam_a', 'fam_a', 'fam_b', 'fam_c'],
-        'order':         ['ord_x', 'ord_x', 'ord_x', 'ord_y']
+        'order':         ['ord_x', 'ord_x', 'ord_x', 'ord_y'],
     }
     dummy_df = pd.DataFrame(dummy_taxonomy_data)
     dummy_path = config.TEMP_DIR / "dummy_taxonomy.csv"
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     try:
         lineage_map_demo, dist_matrix_demo = load_and_compute_distance_matrix(
-            dummy_path, dummy_species_list
+            dummy_path, dummy_species_list,
         )
 
         print("\n[DEMO] Lineage Map:")

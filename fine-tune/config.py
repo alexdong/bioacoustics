@@ -1,5 +1,4 @@
 # config.py
-"""Configuration settings for the fine-tuning process."""
 
 from pathlib import Path
 

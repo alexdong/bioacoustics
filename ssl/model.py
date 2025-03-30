@@ -1,15 +1,10 @@
 # ssl/model.py
-"""Defines the Masked Autoencoder (MAE) model for SSL."""
 
-
-# Use config settings from the ssl directory
 import config as ssl_config
 import torch
 import torch.nn as nn
 from transformers import WhisperConfig, WhisperModel
-from transformers.models.whisper.modeling_whisper import (
-    WhisperEncoderLayer,  # For decoder
-)
+from transformers.models.whisper.modeling_whisper import WhisperEncoderLayer
 
 # Type Alias
 Tensor = torch.Tensor
@@ -23,7 +18,7 @@ def build_ssl_model() -> nn.Module:
     print(f"[SSL MODEL] Loading base Whisper encoder: openai/whisper-{ssl_config.WHISPER_MODEL_SIZE}")
     whisper_config = WhisperConfig.from_pretrained(f"openai/whisper-{ssl_config.WHISPER_MODEL_SIZE}")
     whisper_model = WhisperModel.from_pretrained(
-        f"openai/whisper-{ssl_config.WHISPER_MODEL_SIZE}", config=whisper_config
+        f"openai/whisper-{ssl_config.WHISPER_MODEL_SIZE}", config=whisper_config,
     )
     encoder = whisper_model.get_encoder()
     encoder_embed_dim = encoder.config.d_model
@@ -40,7 +35,7 @@ def build_ssl_model() -> nn.Module:
         decoder_embed_dim=ssl_config.DECODER_EMBED_DIM,
         decoder_depth=ssl_config.DECODER_DEPTH,
         decoder_num_heads=ssl_config.DECODER_NUM_HEADS,
-        output_patch_dim=ssl_config.N_MELS # Predict N_MELS for each time frame
+        output_patch_dim=ssl_config.N_MELS, # Predict N_MELS for each time frame
     )
 
     # 3. Combine into MAE Model
@@ -175,7 +170,7 @@ class MaskedAutoencoderModel(nn.Module):
             resized_mask = torch.nn.functional.interpolate(
                 mask_float,
                 size=encoder_frame_count,
-                mode='nearest'
+                mode='nearest',
             ).squeeze(1)  # Remove channel dim: (B, N_FRAMES_ENC)
 
             # Convert back to boolean
