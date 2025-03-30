@@ -2,6 +2,7 @@
 """Defines the fine-tuning model architecture."""
 
 from typing import Optional
+from pathlib import Path  # Add this import
 
 import config  # Import config variables
 import torch

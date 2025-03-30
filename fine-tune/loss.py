@@ -4,7 +4,7 @@
 
 import config  # Import config variables
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as functional  # Change from 'as F' to 'as functional'
 
 # Type Alias
 Tensor = torch.Tensor
@@ -40,7 +40,7 @@ def hierarchical_distance_loss(
 
     # Use BCEWithLogitsLoss for numerical stability
     # Calculate element-wise loss *without* reduction
-    bce_loss_elements = F.binary_cross_entropy_with_logits(
+    bce_loss_elements = functional.binary_cross_entropy_with_logits(
         logits, targets, reduction='none'
     )
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
              dummy_logits, dummy_targets_no_tp, dummy_dist_matrix, alpha_demo
         )
         # Should be equivalent to standard BCEWithLogitsLoss in this case
-        standard_bce = F.binary_cross_entropy_with_logits(dummy_logits, dummy_targets_no_tp)
+        standard_bce = functional.binary_cross_entropy_with_logits(dummy_logits, dummy_targets_no_tp)
         print(f"\n[DEMO] Loss with no TPs: {loss_no_tp.item()}")
         print(f"[DEMO] Standard BCE (no TPs): {standard_bce.item()}")
         assert torch.isclose(loss_no_tp, standard_bce), "Loss mismatch when no TPs"

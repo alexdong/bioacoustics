@@ -11,6 +11,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from loss import mae_reconstruction_loss
+from torch.utils.data import Dataset
+import model  # Import the model module
+import data_loader  # Import data_loader module
 
 # Example scheduler: Cosine Annealing
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -110,9 +113,13 @@ if __name__ == "__main__":
 
     # Create dummy components
     class DummySSLDataset(Dataset):
-        def __init__(self, length=20) -> None: self.len = length
-        def __len__(self) -> int: return self.len
-        def __getitem__(self, idx):
+        def __init__(self, length: int = 20) -> None: 
+            self.len = length
+            
+        def __len__(self) -> int: 
+            return self.len
+            
+        def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor]:
             frames = 100 # Shorter sequence for faster demo
             masked = torch.randn(ssl_config.N_MELS, frames)
             orig = torch.randn(ssl_config.N_MELS, frames)

@@ -8,6 +8,7 @@ from pathlib import Path
 import config as ssl_config
 import numpy as np
 import torch
+from torch import Tensor
 import torchaudio
 from torch.utils.data import DataLoader, Dataset
 
@@ -127,7 +128,8 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
             raise RuntimeError(f"Failed to load audio: {audio_path}") from e
 
         # Handle channels and resampling (same as fine-tuning loader)
-        if waveform.shape[0] > 1: waveform = torch.mean(waveform, dim=0, keepdim=True)
+        if waveform.shape[0] > 1:
+            waveform = torch.mean(waveform, dim=0, keepdim=True)
         if sr != self.target_sr:
             resampler = torchaudio.transforms.Resample(sr, self.target_sr)
             waveform = resampler(waveform)

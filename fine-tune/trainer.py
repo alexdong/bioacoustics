@@ -11,6 +11,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from loss import hierarchical_distance_loss
+from torch.utils.data import Dataset
+import model  # Import the model module
 
 # Assuming DistanceMatrix is numpy initially, convert to tensor before loss
 from taxonomy import DistanceMatrix as NumpyDistanceMatrix
@@ -150,13 +152,13 @@ if __name__ == "__main__":
 
     # Create dummy components
     class DummyEncoder(nn.Module):
-        def __init__(self, feature_size=128) -> None:
+        def __init__(self, feature_size: int = 128) -> None:
             super().__init__()
             self.feature_size = feature_size
             self.config = type('obj', (object,), {'d_model': feature_size})() # Mock config
             self.dummy_layer = nn.Linear(config.N_MELS * 10, self.feature_size) # Rough size match
 
-        def forward(self, input_features):
+        def forward(self, input_features: Tensor) -> Any:
              # Flatten N_MELS and some time dim for Linear input
              bs, n_mels, n_frames = input_features.shape
              # Need a fixed size input for linear, this is tricky without real encoder
@@ -167,9 +169,13 @@ if __name__ == "__main__":
 
 
     class DummyDataset(Dataset):
-        def __init__(self, length=20) -> None: self.len = length
-        def __len__(self) -> int: return self.len
-        def __getitem__(self, idx):
+        def __init__(self, length: int = 20) -> None: 
+            self.len = length
+            
+        def __len__(self) -> int: 
+            return self.len
+            
+        def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
             # Rough estimate of frame count for 5s at 32kHz, hop 160, n_fft 1024 -> ~1000 frames
             frame_count = 1000 # Matches competition 5s window inference more closely
             mel = torch.randn(config.N_MELS, frame_count)
