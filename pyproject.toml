@@ -1,5 +1,5 @@
 [project]
-
+name = "birdclef_fine_tune"
 
 
 [tool.ruff]
