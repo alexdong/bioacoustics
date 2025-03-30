@@ -1,23 +1,56 @@
 [project]
 name = "birdclef"
 version = "0.1.0"
+description = "birdclef-2025"
+readme = "README.md"
+requires-python = "==3.12.6"
+dependencies = [
+    "accelerate>=1.0.1",
+    "click>=8.1.8",
+    "datasets>=3.1.0",
+    "evaluate>=0.4.3",
+    "google>=3.0.0",
+    "gradio>=4.44.1",
+    "httpx>=0.27.2",
+    "ipython>=8.12.3",
+    "jinja2>=3.1.6",
+    "levenshtein>=0.25.1",
+    "ollama>=0.4.7",
+    "openai>=1.66.3",
+    "peft; sys_platform == 'linux'",
+    "rich>=13.8.1",
+    "ruff>=0.9.10",
+    "sentencepiece>=0.2.0",
+    "torch>=2.5.1",
+    "transformers>=4.46.3",
+    "unsloth>=2025.3.18; sys_platform=='linux'",
+    "vllm>=0.8.2; sys_platform=='linux'",
+]
+
+version = "0.1.0"
+dependencies = [
+    "pyright>=1.1.398",
+]
 
 
-[tool.ruff]
-line-length = 88
-select = ["E", "F", "W", "I", "UP", "N", "ANN"] # Example selection, tailor this
-ignore = ["E501", "ANN101", "ANN102", "ANN401"] # Ignore missing types for self/cls, Any types if necessary initially
+[tool.ruff.lint]
+select = [
+    "ANN",
+    "COM812",
+    "E",
+    "F",
+    "I",
+    "W",
+]
+ignore = [
+    "D",
+    "EM102",
+    "E501",
+    "PLR0913",
+    "TRY003",
+    "W293",
+]
 
-[tool.ruff.lint.isort]
-known-first-party = ["birdclef"] # Tell isort about your project structure
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true # Start with this, try to remove later by adding stubs
-# Add plugin for torch if needed for better type inference
-# plugins = ["torch.distributed.mypy_plugin"] # Example
 
 [tool.pyright]
 exclude = ["**/node_modules", "**/__pycache__", "./stubs"]
