@@ -1,19 +1,20 @@
 # ssl/trainer.py
 """Functions for the MAE SSL training loop."""
 
-import torch
-import torch.optim as optim
-# Example scheduler: Cosine Annealing
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
-import torch.nn as nn
-from typing import Dict, Any, Tuple
 import time
 from pathlib import Path
+from typing import Any
 
 # Use config settings from the ssl directory
 import config as ssl_config
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from loss import mae_reconstruction_loss
+
+# Example scheduler: Cosine Annealing
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader
 
 # Type Alias
 Tensor = torch.Tensor
@@ -109,8 +110,8 @@ if __name__ == "__main__":
 
     # Create dummy components
     class DummySSLDataset(Dataset):
-        def __init__(self, length=20): self.len = length
-        def __len__(self): return self.len
+        def __init__(self, length=20) -> None: self.len = length
+        def __len__(self) -> int: return self.len
         def __getitem__(self, idx):
             frames = 100 # Shorter sequence for faster demo
             masked = torch.randn(ssl_config.N_MELS, frames)

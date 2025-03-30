@@ -1,11 +1,10 @@
 # loss.py
 """Hierarchical distance-weighted loss function."""
 
+
+import config  # Import config variables
 import torch
 import torch.nn.functional as F
-from typing import Tuple
-
-import config # Import config variables
 
 # Type Alias
 Tensor = torch.Tensor

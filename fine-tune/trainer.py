@@ -1,20 +1,21 @@
 # trainer.py
 """Functions for training loop and validation."""
 
-import torch
-import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau # Example scheduler
-from torch.utils.data import DataLoader
-import torch.nn as nn
-from typing import Dict, Any, Tuple
 import time
 from pathlib import Path
-import numpy as np # For distance matrix type hint fix
+from typing import Any
+
+import config  # Import config variables
+import numpy as np  # For distance matrix type hint fix
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from loss import hierarchical_distance_loss
 
 # Assuming DistanceMatrix is numpy initially, convert to tensor before loss
 from taxonomy import DistanceMatrix as NumpyDistanceMatrix
-from loss import hierarchical_distance_loss
-import config # Import config variables
+from torch.optim.lr_scheduler import ReduceLROnPlateau  # Example scheduler
+from torch.utils.data import DataLoader
 
 # Type Alias
 Tensor = torch.Tensor
@@ -149,7 +150,7 @@ if __name__ == "__main__":
 
     # Create dummy components
     class DummyEncoder(nn.Module):
-        def __init__(self, feature_size=128):
+        def __init__(self, feature_size=128) -> None:
             super().__init__()
             self.feature_size = feature_size
             self.config = type('obj', (object,), {'d_model': feature_size})() # Mock config
@@ -166,8 +167,8 @@ if __name__ == "__main__":
 
 
     class DummyDataset(Dataset):
-        def __init__(self, length=20): self.len = length
-        def __len__(self): return self.len
+        def __init__(self, length=20) -> None: self.len = length
+        def __len__(self) -> int: return self.len
         def __getitem__(self, idx):
             # Rough estimate of frame count for 5s at 32kHz, hop 160, n_fft 1024 -> ~1000 frames
             frame_count = 1000 # Matches competition 5s window inference more closely

@@ -1,17 +1,15 @@
 # ssl/data_loader.py
 """Dataset class and functions for loading unlabeled audio for SSL."""
 
-import torch
-import torchaudio
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from typing import List, Dict, Tuple, Any, Optional
+import random  # For selecting files if needed
 from pathlib import Path
-import warnings
-import random # For selecting files if needed
 
 # Use config settings from the ssl directory
 import config as ssl_config
+import numpy as np
+import torch
+import torchaudio
+from torch.utils.data import DataLoader, Dataset
 
 # Suppress torchaudio warnings
 # warnings.filterwarnings("ignore", category=UserWarning, module="torchaudio")
@@ -55,7 +53,7 @@ def create_ssl_dataloader(
 # --- Masking Function ---
 def _random_masking(
     features: Tensor, mask_ratio: float = 0.75
-) -> Tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor]:
     """
     Performs random masking on the time dimension of a spectrogram.
 
@@ -88,13 +86,13 @@ def _random_masking(
 
 
 # --- Dataset Class ---
-class SSLDataset(Dataset[Tuple[AudioTensor, AudioTensor, Tensor]]):
+class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
     """PyTorch Dataset for SSL pre-training on unlabeled audio."""
 
     def __init__(
         self,
-        audio_files: List[Path],
-    ):
+        audio_files: list[Path],
+    ) -> None:
         super().__init__()
         self.audio_files = audio_files
         self.target_sr = ssl_config.TARGET_SAMPLE_RATE
@@ -115,7 +113,7 @@ class SSLDataset(Dataset[Tuple[AudioTensor, AudioTensor, Tensor]]):
     def __len__(self) -> int:
         return len(self.audio_files)
 
-    def __getitem__(self, index: int) -> Tuple[AudioTensor, AudioTensor, Tensor]:
+    def __getitem__(self, index: int) -> tuple[AudioTensor, AudioTensor, Tensor]:
         """Loads audio, processes, applies masking."""
         audio_path = self.audio_files[index]
         # Minimal check, assuming path validity from initial scan
@@ -168,8 +166,8 @@ class SSLDataset(Dataset[Tuple[AudioTensor, AudioTensor, Tensor]]):
 
 # --- Custom Collate Function (Optional but Recommended) ---
 def _ssl_collate_fn(
-    batch: List[Tuple[AudioTensor, AudioTensor, Tensor]]
-) -> Tuple[AudioTensor, AudioTensor, Tensor]:
+    batch: list[tuple[AudioTensor, AudioTensor, Tensor]]
+) -> tuple[AudioTensor, AudioTensor, Tensor]:
     """Pads sequences within a batch and stacks tensors."""
     # Unzip the batch
     masked_specs, original_specs, masks = zip(*batch)

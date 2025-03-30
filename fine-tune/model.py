@@ -1,12 +1,12 @@
 # model.py
 """Defines the fine-tuning model architecture."""
 
-import torch
-import torch.nn as nn
-from transformers import WhisperModel, WhisperConfig
 from typing import Optional
 
-import config # Import config variables
+import config  # Import config variables
+import torch
+import torch.nn as nn
+from transformers import WhisperConfig, WhisperModel
 
 # Type Alias
 Tensor = torch.Tensor
@@ -73,7 +73,7 @@ class BirdClefClassifier(nn.Module):
         encoder_feature_size: int,
         num_classes: int,
         pooling_type: str = "mean",
-    ):
+    ) -> None:
         super().__init__()
         self.encoder = encoder
         self.feature_size = encoder_feature_size
