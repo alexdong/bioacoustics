@@ -6,18 +6,17 @@ from pathlib import Path
 from typing import Any
 
 import config  # Import config variables
+import model  # Import the model module
 import numpy as np  # For distance matrix type hint fix
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from loss import hierarchical_distance_loss
-from torch.utils.data import Dataset
-import model  # Import the model module
 
 # Assuming DistanceMatrix is numpy initially, convert to tensor before loss
 from taxonomy import DistanceMatrix as NumpyDistanceMatrix
 from torch.optim.lr_scheduler import ReduceLROnPlateau  # Example scheduler
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 # Type Alias
 Tensor = torch.Tensor
@@ -169,12 +168,12 @@ if __name__ == "__main__":
 
 
     class DummyDataset(Dataset):
-        def __init__(self, length: int = 20) -> None: 
+        def __init__(self, length: int = 20) -> None:
             self.len = length
-            
-        def __len__(self) -> int: 
+
+        def __len__(self) -> int:
             return self.len
-            
+
         def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
             # Rough estimate of frame count for 5s at 32kHz, hop 160, n_fft 1024 -> ~1000 frames
             frame_count = 1000 # Matches competition 5s window inference more closely

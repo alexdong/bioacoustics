@@ -1,25 +1,31 @@
 # config.py
 """Configuration settings for the fine-tuning process."""
 
-import torch
 from pathlib import Path
 
+import torch
+
 # --- Paths ---
-# NOTE: Assumes data structure from typical Kaggle competitions
-# NOTE: You MUST update these paths!
-BASE_DATA_DIR: Path = Path("./input/birdclef-2025") # TODO: Update! Top-level data dir
+# Define paths with consistent structure
+PROJECT_ROOT: Path = Path(__file__).parent.parent.resolve()  # Get project root directory
+DATA_DIR: Path = PROJECT_ROOT / "data"  # Data directory in project root
+
+# Audio and metadata paths
+BASE_DATA_DIR: Path = DATA_DIR / "birdclef-2025"  # Customizable dataset folder name
 AUDIO_DIR: Path = BASE_DATA_DIR / "train_audio"
 TRAIN_METADATA_PATH: Path = BASE_DATA_DIR / "train_metadata.csv"
-TAXONOMY_PATH: Path = BASE_DATA_DIR / "taxonomy.csv" # TODO: Check actual filename
+TAXONOMY_PATH: Path = BASE_DATA_DIR / "taxonomy.csv"
 
-# NOTE: Path to your *SSL-adapted* encoder weights
-ENCODER_CHECKPOINT_PATH: Path | None = Path("./ssl_encoder_final.pt") # TODO: Update! Or None to use base Whisper
+# SSL encoder weights from ssl directory output
+SSL_DIR: Path = PROJECT_ROOT / "ssl"
+ENCODER_CHECKPOINT_PATH: Path | None = SSL_DIR / "output_ssl" / "ssl_encoder_final.pt"
+# Set to None to use base Whisper instead of SSL pre-trained encoder
 
-# NOTE: Where to save fine-tuned model checkpoints and outputs
-OUTPUT_DIR: Path = Path("./output")
+# Output directories
+OUTPUT_DIR: Path = PROJECT_ROOT / "output" / "fine-tune"
 CHECKPOINT_DIR: Path = OUTPUT_DIR / "checkpoints"
-LOG_DIR: Path = OUTPUT_DIR / "logs" # Simple print logs, not TensorBoard
-TEMP_DIR: Path = Path("/tmp/birdclef_finetune") # For intermediate files (not cleaned up)
+LOG_DIR: Path = OUTPUT_DIR / "logs"
+TEMP_DIR: Path = Path("/tmp/birdclef_finetune")  # For intermediate files (not cleaned up)
 
 # --- Audio Processing ---
 TARGET_SAMPLE_RATE: int = 32000 # Whisper models often use 16kHz or 32kHz, check your base

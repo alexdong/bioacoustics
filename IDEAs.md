@@ -12,15 +12,6 @@ Hard: https://medium.com/@rjnclarke/build-a-hard-mixture-of-experts-classifier-i
 https://github.com/Ugenteraan/Deep_Hierarchical_Classification
 
 
-Self-supervised learning
-------------------------
-
-Improve the audio encoder by SSL on a wide range of audio data, not just speech related. Here are some ideas:
-
-- DBR (dog, bird and rain): https://zenodo.org/records/1069747#.Xlj0vi2ZN24
-- ESC-50: Environmental sound classification
-
-
 Training dataset augmentation
 -----------------------------
 
@@ -30,18 +21,6 @@ if the classifier is not able to distinguish when it's raining heavily.
 
 Scraper looks like a good tool to generate synthetic data.
 https://scaper.readthedocs.io/en/latest/tutorial.html#synthesizing-soundscapes
-
-Design a loss function for the hierarchical MoE
-----------------------------------------------
-
-Penalize the model for predicting a bird that is not in the same family as the
-actual bird. This will help the model to learn the hierarchy.
-
-
-Use xeno-canto to augment data
-------------------------------
-
-For the bird sounds that are under represented in the dataset, we can use xeno-canto to augment the data. The dataset is available here: https://www.xeno-canto.org/article/153
 
 
 Use graph travel distance as the Loss Function
@@ -75,17 +54,6 @@ based on their primary sound production method:
   sounds. 
 - Wingbeat Users (Some Insects - Diptera): Sound produced by wing movement,
   typically high-frequency tones.
-
-
-Fine-tune whisper
------------------
-
-openai/whisper-large-v3-turbo is the model to start with. Qwen-audio uses v2
-for training. https://huggingface.co/openai/whisper-large-v3-turbo
-
-The FireRedASR-LLM achieved better result for Mandarin than the Whisper model. 
-We can use the same approach to fine-tune the Whisper model for bird sounds.
-Hmm. It uses a different architecture with loads of high quality Mandarin data.
 
 
 Performance tuning Whisper

@@ -1,18 +1,18 @@
 # ssl/main.py
 """Main script to run the SSL MAE pre-training process."""
 
-import torch
-import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR # Example scheduler
-import numpy as np
 import random
-from pathlib import Path
 
 # Import local SSL modules
 import config as ssl_config
 import data_loader as ssl_data_loader
 import model as ssl_model
+import numpy as np
+import torch
+import torch.optim as optim
 import trainer as ssl_trainer
+from torch.optim.lr_scheduler import CosineAnnealingLR  # Example scheduler
+
 
 def set_seed(seed: int) -> None:
     """Sets random seed for reproducibility."""

@@ -1,16 +1,13 @@
 # data_loader.py
 """Dataset class and functions for loading audio data."""
 
+from pathlib import Path
+
+import config  # Import config variables
+import pandas as pd
 import torch
 import torchaudio
-import pandas as pd
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from typing import List, Dict, Tuple, Any, Optional
-from pathlib import Path
-import warnings
-
-import config # Import config variables
+from torch.utils.data import DataLoader, Dataset
 
 # Suppress torchaudio warnings about sox/ffmpeg backends if desired
 # warnings.filterwarnings("ignore", category=UserWarning, module="torchaudio")
@@ -23,24 +20,57 @@ LabelTensor = torch.Tensor
 def create_dataloaders(
     metadata_path: Path,
     audio_dir: Path,
-    species_list: List[str],
+    species_list: list[str],
     batch_size: int,
     num_workers: int,
-    # Add args for train/validation split if needed
-) -> Tuple[DataLoader, DataLoader | None]:
-    """Creates training and validation dataloaders."""
+    val_split: float = 0.2,
+    random_state: int = 42
+) -> tuple[DataLoader, DataLoader | None]:
+    """
+    Creates training and validation dataloaders.
+
+    Args:
+        metadata_path: Path to CSV file containing audio metadata
+        audio_dir: Directory containing audio files
+        species_list: List of species names for classification
+        batch_size: Batch size for dataloader
+        num_workers: Number of worker processes for dataloader
+        val_split: Fraction of data to use for validation (0-1)
+        random_state: Random seed for reproducible train/val splits
+    """
     print("[DATA] Creating DataLoaders...")
     assert metadata_path.is_file(), f"Metadata file not found: {metadata_path}"
     assert audio_dir.is_dir(), f"Audio directory not found: {audio_dir}"
 
     full_df = pd.read_csv(metadata_path)
-    # TODO: Implement train/validation split logic here if needed
-    # For now, using the full dataset as 'train' for simplicity
-    train_df = full_df
-    val_df = None # Placeholder
+
+    # Implement train/validation split
+    if val_split > 0:
+        # Stratified split to maintain class distribution
+        from sklearn.model_selection import train_test_split
+
+        # Get stratification labels (primary_label)
+        strat_labels = full_df['primary_label']
+
+        # Perform split
+        train_df, val_df = train_test_split(
+            full_df,
+            test_size=val_split,
+            random_state=random_state,
+            stratify=strat_labels
+        )
+
+        # Reset indices
+        train_df = train_df.reset_index(drop=True)
+        val_df = val_df.reset_index(drop=True)
+    else:
+        # Use all data for training
+        train_df = full_df
+        val_df = None
 
     print(f"[DATA] Training samples: {len(train_df)}")
-    # print(f"[DATA] Validation samples: {len(val_df) if val_df is not None else 0}")
+    if val_df is not None:
+        print(f"[DATA] Validation samples: {len(val_df)}")
 
     train_dataset = BirdClefDataset(train_df, audio_dir, species_list)
     train_loader = DataLoader(
@@ -68,15 +98,15 @@ def create_dataloaders(
     return train_loader, val_loader
 
 # --- Dataset Class ---
-class BirdClefDataset(Dataset[Tuple[AudioTensor, LabelTensor]]):
+class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
     """PyTorch Dataset for BirdCLEF audio classification."""
 
     def __init__(
         self,
         metadata_df: pd.DataFrame,
         audio_dir: Path,
-        species_list: List[str],
-    ):
+        species_list: list[str],
+    ) -> None:
         super().__init__()
         self.metadata = metadata_df
         self.audio_dir = audio_dir
@@ -101,7 +131,7 @@ class BirdClefDataset(Dataset[Tuple[AudioTensor, LabelTensor]]):
     def __len__(self) -> int:
         return len(self.metadata)
 
-    def __getitem__(self, index: int) -> Tuple[AudioTensor, LabelTensor]:
+    def __getitem__(self, index: int) -> tuple[AudioTensor, LabelTensor]:
         """Loads audio, processes, and returns spectrogram and labels."""
         row = self.metadata.iloc[index]
         # TODO: Adapt filename generation based on metadata.csv columns

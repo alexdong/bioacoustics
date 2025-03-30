@@ -1,18 +1,14 @@
 # predictor.py
 """Functions for running inference with a trained model."""
 
-import torch
-import torchaudio
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
-from typing import List, Tuple
 from pathlib import Path
-import pandas as pd
-import numpy as np
 
 import config
-import model # To build model structure
-from data_loader import BirdClefDataset # Reuse dataset logic if possible
+import model  # To build model structure
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
 
 # Type Alias
 Tensor = torch.Tensor
@@ -65,15 +61,32 @@ def load_model_for_inference(
 
     # Load the fine-tuned state dict
     state_dict = torch.load(checkpoint_path, map_location='cpu')
+
+    # Handle different checkpoint formats
+    if isinstance(state_dict, dict) and "model" in state_dict:
+        # Handle case where state_dict is in the "model" key (e.g., PyTorch Lightning)
+        state_dict = state_dict["model"]
+    elif isinstance(state_dict, dict) and "state_dict" in state_dict:
+        # Handle case where state_dict is in the "state_dict" key (many frameworks)
+        state_dict = state_dict["state_dict"]
+
     # Adapt keys if needed (e.g., if saved with 'module.' prefix)
-    # state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
-    missing_keys, unexpected_keys = model_instance.load_state_dict(state_dict, strict=False)
-    if missing_keys:
-         print(f"[WARNING] Missing keys when loading fine-tuned state_dict: {missing_keys}")
-    if unexpected_keys:
-         print(f"[WARNING] Unexpected keys when loading fine-tuned state_dict: {unexpected_keys}")
-    # Allow missing/unexpected if only loading encoder part earlier? Strict=True safer here.
-    # assert not missing_keys and not unexpected_keys, "State dict mismatch"
+    if any(k.startswith('module.') for k in state_dict.keys()):
+        state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+
+    # Use strict loading to ensure all keys match
+    try:
+        model_instance.load_state_dict(state_dict, strict=True)
+        print("[PREDICT] Model weights loaded successfully with strict=True")
+    except Exception as e:
+        print(f"[WARNING] Strict loading failed: {e}")
+        print("[WARNING] Attempting non-strict loading as fallback")
+        missing_keys, unexpected_keys = model_instance.load_state_dict(state_dict, strict=False)
+        if missing_keys:
+            print(f"[WARNING] Missing keys when loading fine-tuned state_dict: {missing_keys}")
+        if unexpected_keys:
+            print(f"[WARNING] Unexpected keys when loading fine-tuned state_dict: {unexpected_keys}")
+        print("[WARNING] Model loaded with non-strict matching - results may be unreliable")
     print("[PREDICT] Model weights loaded successfully.")
 
     model_instance.to(device)

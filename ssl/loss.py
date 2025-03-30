@@ -2,7 +2,6 @@
 """Reconstruction loss for MAE SSL."""
 
 import torch
-import torch.nn.functional as F
 
 # Use config settings from the ssl directory
 # import config as ssl_config # Not strictly needed here

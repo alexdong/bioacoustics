@@ -1,14 +1,15 @@
 # ssl/model.py
 """Defines the Masked Autoencoder (MAE) model for SSL."""
 
-import torch
-import torch.nn as nn
-from transformers import WhisperModel, WhisperConfig
-from transformers.models.whisper.modeling_whisper import WhisperEncoderLayer # For decoder
-from typing import Optional, Tuple
 
 # Use config settings from the ssl directory
 import config as ssl_config
+import torch
+import torch.nn as nn
+from transformers import WhisperConfig, WhisperModel
+from transformers.models.whisper.modeling_whisper import (
+    WhisperEncoderLayer,  # For decoder
+)
 
 # Type Alias
 Tensor = torch.Tensor
@@ -58,7 +59,7 @@ class SimpleMAEDecoder(nn.Module):
         decoder_depth: int,
         decoder_num_heads: int,
         output_patch_dim: int, # Dimension of the output patch (e.g., N_MELS)
-    ):
+    ) -> None:
         super().__init__()
         self.decoder_embed = nn.Linear(encoder_embed_dim, decoder_embed_dim, bias=True)
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim)) # Learnable mask token
@@ -97,63 +98,42 @@ class SimpleMAEDecoder(nn.Module):
         Forward pass of the decoder.
 
         Args:
-            x: Tensor of shape (batch, num_unmasked_tokens, encoder_embed_dim) - Output from encoder.
+            x: Tensor of shape (batch, total_frames, encoder_embed_dim) - Output from encoder.
             masked_indices: Boolean tensor (batch, total_frames) where True means masked.
                             Used to know where to insert mask tokens.
         """
+        batch_size, total_frames, embed_dim = x.shape
+
         # Project encoder output features to decoder dimension
-        x = self.decoder_embed(x) # (batch, num_unmasked, decoder_dim)
-        batch_size, total_frames = masked_indices.shape
-        num_unmasked = x.shape[1]
-        num_masked = total_frames - num_unmasked
+        x = self.decoder_embed(x)  # (batch, total_frames, decoder_dim)
 
-        # Expand mask tokens for the batch for the number of masked positions
-        mask_tokens = self.mask_token.repeat(batch_size, num_masked, 1)
+        # Create mask token expanded to match batch size and embedding dimension
+        mask_token_expanded = self.mask_token.expand(batch_size, 1, -1)  # (batch, 1, decoder_dim)
 
-        # --- Reconstruct full sequence ---
-        # This is the tricky part: inserting mask tokens correctly.
-        # Requires knowing the original positions of unmasked tokens.
-        # A simpler MAE approach: Encoder processes *all* frames (masked ones are zeroed),
-        # then decoder simply uses the full sequence output. Let's try that approach
-        # as it avoids complex index shuffling here.
-        # ** Modify MAEModel forward pass for this simpler approach **
-        # Assuming `x` input here is the full sequence from encoder (B, T, EncDim)
-        # and we project it, then process.
+        # Create a properly expanded mask for broadcasting
+        mask_expanded = masked_indices.unsqueeze(-1).to(x.dtype)  # (batch, total_frames, 1)
 
-        # *** Revised Assumption for `forward` ***
-        # Let x be (batch, total_frames, encoder_embed_dim)
-        # Let masked_indices be (batch, total_frames) boolean mask (True=masked)
-        # x = self.decoder_embed(x) # Project full sequence (B, T, DecDim)
-
-        # Replace features at masked positions with the mask token
-        # This might require reshaping mask_indices (B, T) -> (B, T, 1)
-        # mask_expanded = masked_indices.unsqueeze(-1).to(x.dtype) # (B, T, 1)
-        # x = x * (1 - mask_expanded) + mask_tokens_expanded * mask_expanded # Needs careful shape handling
-        # Need a robust way to replace based on mask - this part is complex to get right without
-        # passing indices explicitly.
-
-        # --- Alternative: Process combined sequence ---
-        # This assumes the MAEModel forward pass already combined encoder_output (unmasked)
-        # and mask_tokens (masked) in the correct order.
-        # Let x be the combined sequence: (batch, total_frames, decoder_embed_dim)
-
-        # Add positional embeddings (assuming handled externally or implicitly for now)
-        # x = x + self.decoder_pos_embed
+        # Replace masked positions with mask tokens
+        # For positions where mask_expanded is 1, use mask_token
+        # For positions where mask_expanded is 0, use encoder features
+        # We need to expand mask_token to all masked positions
+        mask_tokens = mask_token_expanded.repeat(1, total_frames, 1)  # (batch, total_frames, decoder_dim)
+        x = x * (1 - mask_expanded) + mask_tokens * mask_expanded
 
         # Apply Transformer blocks
         for layer in self.decoder_layers:
-            layer_outputs = layer(x) # WhisperEncoderLayer returns tuple
-            x = layer_outputs[0] # Get hidden state
+            layer_outputs = layer(x)  # WhisperEncoderLayer returns tuple
+            x = layer_outputs[0]  # Get hidden state
 
         x = self.decoder_norm(x)
-        x = self.decoder_pred(x) # (batch, total_frames, output_patch_dim)
+        x = self.decoder_pred(x)  # (batch, total_frames, output_patch_dim)
 
         return x
 
 # --- MAE Model Class ---
 class MaskedAutoencoderModel(nn.Module):
     """Main MAE model combining encoder and decoder."""
-    def __init__(self, encoder: nn.Module, decoder: nn.Module):
+    def __init__(self, encoder: nn.Module, decoder: nn.Module) -> None:
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -172,25 +152,42 @@ class MaskedAutoencoderModel(nn.Module):
             predictions: Reconstructed spectrogram frames (B, N_FRAMES, N_MELS).
         """
         # 1. Encode the masked input
-        # Assuming encoder handles the input shape and internal pos embeddings
+        # Whisper encoder expects input shape (B, N_MELS, N_FRAMES)
         encoder_output = self.encoder(input_features=masked_features).last_hidden_state
         # encoder_output shape: (B, N_FRAMES_ENC, encoder_embed_dim)
-        # N_FRAMES_ENC might differ from N_FRAMES due to conv layers in Whisper.
-        # This needs careful checking against Whisper implementation! Assume they match for now.
 
-        # 2. Decode
-        # Pass the full sequence output of the encoder to the decoder
-        # The decoder needs to know which parts correspond to masked inputs
-        # to correctly apply mask tokens internally if needed, or just predict all.
-        # Let's assume the SimpleDecoder predicts the full sequence.
-        predictions = self.decoder(encoder_output, mask) # Pass mask for potential internal use
-        # predictions shape: (B, N_FRAMES_DEC, N_MELS)
-        # Assume N_FRAMES_DEC == N_FRAMES
+        # Handle potential frame dimension mismatch between input and encoder output
+        encoder_frame_count = encoder_output.shape[1]
+        input_frame_count = mask.shape[1]
 
-        # Assert output shape consistency
-        # assert predictions.shape[1] == mask.shape[1], "Decoder frame count mismatch"
-        # assert predictions.shape[2] == ssl_config.N_MELS, "Decoder output dim mismatch"
-        # Need to handle potential frame mismatch due to encoder conv layers carefully.
+        if encoder_frame_count != input_frame_count:
+            print(f"[WARNING] Frame count mismatch: encoder={encoder_frame_count}, input={input_frame_count}")
+            # Two options:
+            # 1. Resize the mask to match encoder output
+            # 2. Resize encoder output to match mask
+            # We'll choose option 1 as it's simpler
+
+            # Interpolate mask to match encoder frame count
+            # Convert boolean mask to float for interpolation
+            mask_float = mask.float().unsqueeze(1)  # Add channel dim: (B, 1, N_FRAMES)
+
+            # Use interpolate to resize mask
+            resized_mask = torch.nn.functional.interpolate(
+                mask_float,
+                size=encoder_frame_count,
+                mode='nearest'
+            ).squeeze(1)  # Remove channel dim: (B, N_FRAMES_ENC)
+
+            # Convert back to boolean
+            mask = resized_mask > 0.5
+
+        # 2. Decode - Pass encoder output and mask to decoder
+        predictions = self.decoder(encoder_output, mask)
+
+        # Validate output shape
+        assert predictions.shape[0] == masked_features.shape[0], "Batch size mismatch"
+        assert predictions.shape[1] == encoder_frame_count, "Frame count mismatch in output"
+        assert predictions.shape[2] == ssl_config.N_MELS, "Mel dimension mismatch"
 
         return predictions
 
@@ -209,7 +206,7 @@ if __name__ == "__main__":
         print("[DEMO] Building SSL MAE model...")
         # NOTE: This will download the base whisper model if not cached
         mae_model_demo = build_ssl_model()
-        print(f"[DEMO] MAE Model built.") # Printing full model can be very long
+        print("[DEMO] MAE Model built.") # Printing full model can be very long
 
         # Create dummy input
         dummy_masked_input = torch.randn(batch_size_demo, n_mels_demo, n_frames_demo)

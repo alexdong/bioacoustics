@@ -1,8 +1,8 @@
 # model.py
 """Defines the fine-tuning model architecture."""
 
-from typing import Optional
 from pathlib import Path  # Add this import
+from typing import Optional
 
 import config  # Import config variables
 import torch

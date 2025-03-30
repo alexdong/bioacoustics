@@ -8,8 +8,8 @@ from pathlib import Path
 import config as ssl_config
 import numpy as np
 import torch
-from torch import Tensor
 import torchaudio
+from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 # Suppress torchaudio warnings

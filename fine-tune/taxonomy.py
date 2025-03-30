@@ -1,14 +1,14 @@
 # taxonomy.py
 """Functions for handling taxonomy data and calculating distances."""
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Any
-from pathlib import Path
-from itertools import product
 import time
+from itertools import product
+from pathlib import Path
+from typing import Any
 
-import config # Import config variables
+import config  # Import config variables
+import numpy as np
+import pandas as pd
 
 # Type alias for clarity
 Species = str
@@ -16,14 +16,14 @@ Genus = str
 Family = str
 Order = str
 TaxonRank = str
-Lineage = List[TaxonRank]
-TaxonomyTree = Dict[TaxonRank, Dict[str, Any]] # Simple nested dict representation
+Lineage = list[TaxonRank]
+TaxonomyTree = dict[TaxonRank, dict[str, Any]] # Simple nested dict representation
 DistanceMatrix = np.ndarray
 
 # --- Top Level Function ---
 def load_and_compute_distance_matrix(
-    taxonomy_path: Path, species_list: List[Species]
-) -> Tuple[Dict[Species, Lineage], DistanceMatrix]:
+    taxonomy_path: Path, species_list: list[Species]
+) -> tuple[dict[Species, Lineage], DistanceMatrix]:
     """Loads taxonomy, builds tree, and computes pairwise distance matrix."""
     print("[TAXONOMY] Loading taxonomy data...")
     assert taxonomy_path.is_file(), f"Taxonomy file not found: {taxonomy_path}"
@@ -46,9 +46,9 @@ def load_and_compute_distance_matrix(
     return lineage_map, distance_matrix
 
 # --- Helper Functions ---
-def _build_lineage_map(df: pd.DataFrame, species_list: List[Species]) -> Dict[Species, Lineage]:
+def _build_lineage_map(df: pd.DataFrame, species_list: list[Species]) -> dict[Species, Lineage]:
     """Creates a map from species name to its taxonomic lineage."""
-    lineage_map: Dict[Species, Lineage] = {}
+    lineage_map: dict[Species, Lineage] = {}
     species_set = set(species_list)
     # TODO: Adjust column names as needed
     df_filtered = df[df['primary_label'].isin(species_set)].drop_duplicates(subset=['primary_label'])
@@ -87,12 +87,12 @@ def _compute_taxonomic_distance(lineage1: Lineage, lineage2: Lineage) -> int:
     return dist
 
 def _compute_pairwise_distances(
-    lineage_map: Dict[Species, Lineage], species_list: List[Species]
+    lineage_map: dict[Species, Lineage], species_list: list[Species]
 ) -> DistanceMatrix:
     """Computes the N x N distance matrix."""
     num_species = len(species_list)
     distance_matrix = np.zeros((num_species, num_species), dtype=np.int32)
-    species_to_idx = {name: i for i, name in enumerate(species_list)}
+    {name: i for i, name in enumerate(species_list)}
 
     # Use itertools.product for potentially cleaner iteration (optional)
     for i, j in product(range(num_species), range(num_species)):

@@ -1,24 +1,27 @@
 # ssl/config.py
 """Configuration settings for the SSL pre-training process."""
 
-import torch
 from pathlib import Path
 
+import torch
+
 # --- Paths ---
-# NOTE: Path to your large unlabeled dataset (e.g., iNaturalist audio)
-# This could be a directory containing audio files or a metadata file listing them.
-# Assuming a directory of audio files for simplicity here.
-UNLABELED_AUDIO_DIR: Path = Path("./data/inaturalist_audio") # TODO: Update!
+# Define paths with consistent structure
+PROJECT_ROOT: Path = Path(__file__).parent.parent.resolve()  # Get project root directory
+DATA_DIR: Path = PROJECT_ROOT / "data"  # Data directory in project root
 
-# NOTE: Path to the base Whisper model for starting SSL
+# Path to your large unlabeled dataset (e.g., iNaturalist audio)
+UNLABELED_AUDIO_DIR: Path = DATA_DIR / "unlabeled_audio"
+
+# Path to the base Whisper model for starting SSL
 # If None, loads directly from Hugging Face. If a path, loads custom weights.
-BASE_ENCODER_CHECKPOINT_PATH: Path | None = None # TODO: Update if needed
+BASE_ENCODER_CHECKPOINT_PATH: Path | None = None
 
-# NOTE: Where to save the SSL-trained *encoder* checkpoint
-SSL_OUTPUT_DIR: Path = Path("./output_ssl")
+# Output directories
+SSL_OUTPUT_DIR: Path = PROJECT_ROOT / "output" / "ssl"
 SSL_ENCODER_CHECKPOINT_PATH: Path = SSL_OUTPUT_DIR / "ssl_encoder_final.pt"
-SSL_LOG_DIR: Path = SSL_OUTPUT_DIR / "logs_ssl" # Simple print logs
-SSL_TEMP_DIR: Path = Path("/tmp/birdclef_ssl") # For intermediate files
+SSL_LOG_DIR: Path = SSL_OUTPUT_DIR / "logs"
+SSL_TEMP_DIR: Path = Path("/tmp/birdclef_ssl")  # For intermediate files
 
 # --- Audio Processing (Should match fine-tuning config where applicable) ---
 TARGET_SAMPLE_RATE: int = 32000 # Whisper models often use 16kHz or 32kHz

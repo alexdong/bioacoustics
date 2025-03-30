@@ -1,14 +1,15 @@
 [project]
-name = "birdclef_fine_tune"
+name = "birdclef"
+version = "0.1.0"
 
 
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "W", "I", "UP", "N", "ANN"] # Example selection, tailor this
-ignore = ["ANN101", "ANN102", "ANN401"] # Ignore missing types for self/cls, Any types if necessary initially
+ignore = ["E501", "ANN101", "ANN102", "ANN401"] # Ignore missing types for self/cls, Any types if necessary initially
 
 [tool.ruff.lint.isort]
-known-first-party = ["birdclef_fine_tune"] # Tell isort about your project structure
+known-first-party = ["birdclef"] # Tell isort about your project structure
 
 [tool.mypy]
 python_version = "3.12"
@@ -19,9 +20,8 @@ ignore_missing_imports = true # Start with this, try to remove later by adding s
 # plugins = ["torch.distributed.mypy_plugin"] # Example
 
 [tool.pyright]
-include = ["birdclef_fine_tune"]
-exclude = ["**/node_modules", "**/__pycache__", "birdclef_fine_tune/stubs"]
-stubPath = "birdclef_fine_tune/stubs"
+exclude = ["**/node_modules", "**/__pycache__", "./stubs"]
+stubPath = "./stubs"
 reportMissingImports = "warning" # Or "error" for stricter checks
 reportUndefinedVariable = "error"
 pythonVersion = "3.12"

@@ -1,20 +1,20 @@
 # main.py
 """Main script to run the fine-tuning process."""
 
-import torch
-import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau # Example scheduler
-import pandas as pd
-import numpy as np
 import random
-from pathlib import Path
 
 # Import local modules
 import config
-import taxonomy
 import data_loader
 import model
+import numpy as np
+import pandas as pd
+import taxonomy
+import torch
+import torch.optim as optim
 import trainer
+from torch.optim.lr_scheduler import ReduceLROnPlateau  # Example scheduler
+
 # import predictor # Optional: if running prediction after training
 
 def set_seed(seed: int) -> None:
@@ -39,37 +39,47 @@ print(f"[MAIN] Using device: {device}")
 print("[MAIN] Loading training metadata...")
 assert config.TRAIN_METADATA_PATH.is_file(), f"Metadata not found: {config.TRAIN_METADATA_PATH}"
 train_meta_df = pd.read_csv(config.TRAIN_METADATA_PATH)
-# TODO: Adapt based on actual metadata columns and how classes are defined
-# Assuming primary_label contains the target species
+# Verify that primary_label column exists in metadata
+assert 'primary_label' in train_meta_df.columns, "Missing 'primary_label' column in metadata"
 species_list = sorted(list(train_meta_df['primary_label'].unique()))
 num_classes = len(species_list)
 print(f"[MAIN] Found {num_classes} unique species.")
-assert num_classes == config.NUM_CLASSES, "Number of classes mismatch between config and data"
+if num_classes != config.NUM_CLASSES:
+    print(f"[WARNING] Mismatch between detected classes ({num_classes}) and config.NUM_CLASSES ({config.NUM_CLASSES})")
+    print("[WARNING] Updating config.NUM_CLASSES to match detected classes")
+    config.NUM_CLASSES = num_classes
 
 # 2. Load Taxonomy and Compute Distance Matrix
 print("[MAIN] Loading taxonomy and computing distance matrix...")
-_, distance_matrix_np = taxonomy.load_and_compute_distance_matrix(
-    config.TAXONOMY_PATH, species_list
-)
-# Save distance matrix for potential reuse/analysis (optional)
-dist_matrix_path = config.TEMP_DIR / "distance_matrix.npy"
-np.save(dist_matrix_path, distance_matrix_np)
-print(f"[MAIN] Saved distance matrix to: {dist_matrix_path}")
+try:
+    _, distance_matrix_np = taxonomy.load_and_compute_distance_matrix(
+        config.TAXONOMY_PATH, species_list
+    )
+    # Save distance matrix for potential reuse/analysis
+    dist_matrix_path = config.TEMP_DIR / "distance_matrix.npy"
+    np.save(dist_matrix_path, distance_matrix_np)
+    print(f"[MAIN] Saved distance matrix to: {dist_matrix_path}")
+except Exception as e:
+    print(f"[WARNING] Error computing distance matrix: {e}")
+    print("[WARNING] Using identity matrix as fallback")
+    # Create identity matrix as fallback (no hierarchical penalty)
+    distance_matrix_np = np.eye(num_classes)
 
 
-# 3. Create DataLoaders
-print("[MAIN] Creating dataloaders...")
-# TODO: Implement train/validation split in create_dataloaders if needed
+# 3. Create DataLoaders with validation split
+print("[MAIN] Creating dataloaders with validation split...")
 train_loader, val_loader = data_loader.create_dataloaders(
     metadata_path=config.TRAIN_METADATA_PATH,
     audio_dir=config.AUDIO_DIR,
     species_list=species_list,
     batch_size=config.BATCH_SIZE,
     num_workers=config.NUM_WORKERS,
+    val_split=0.2,  # Use 20% of data for validation
+    random_state=config.RANDOM_SEED,
 )
 # Basic check
 assert train_loader is not None, "Train loader creation failed"
-# assert val_loader is not None, "Validation loader creation failed (required for this script)"
+assert val_loader is not None, "Validation loader creation failed - required for proper evaluation"
 
 
 # 4. Build Model
