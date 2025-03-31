@@ -9,12 +9,13 @@ import json
 import time
 from typing import Any, Dict, List, Optional
 
-import boto3  # type: ignore
+import boto3
 import requests
-from botocore.exceptions import (  # type: ignore
+from botocore.exceptions import (
     NoCredentialsError,
     PartialCredentialsError,
 )
+from mypy_boto3_s3.client import S3Client
 from tqdm import tqdm
 
 from utils.download_utils import (
@@ -35,7 +36,7 @@ S3_PREFIX: str = "xeno-canto/"
 
 def download_and_upload_recording(
     recording: Dict[str, Any],
-    s3_client: Any,
+    s3_client: S3Client,
     bucket: str,
     prefix: str,
     pbar: Optional[tqdm] = None, # Pass the progress bar instance
@@ -111,7 +112,7 @@ def download_and_upload_recording(
         pbar.update(1)
 
 
-def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str, start_page: int = 1) -> None:
+def fetch_and_process_pages(query: str, s3_client: S3Client, bucket: str, prefix: str, start_page: int = 1) -> None:
     """Fetches all pages for a query and processes each recording, showing progress."""
     current_page: int = start_page
     total_pages: int = 1 # Assume 1 initially
@@ -251,7 +252,7 @@ def main() -> None:
     print(f"⏱️  API Delay: {DEFAULT_REQUEST_DELAY} seconds between requests")
 
     try:
-        s3_client = boto3.client("s3")
+        s3_client: S3Client = boto3.client("s3")
         s3_client.list_buckets() # Basic check
         print("[INFO] S3 client initialized and credentials seem valid.")
     except (NoCredentialsError, PartialCredentialsError) as e:

@@ -1,9 +1,11 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, BinaryIO
 
+import boto3
 import requests
+from mypy_boto3_s3.client import S3Client
 from tqdm import tqdm
 
 # --- Common Constants ---
@@ -92,7 +94,7 @@ def download_file(
                 pass
         return False
 
-def save_json(data: Any, output_path: Union[str, Path]) -> bool:
+def save_json(data: Dict[str, Any], output_path: Union[str, Path]) -> bool:
     """Save data as JSON to the specified path."""
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -121,7 +123,7 @@ def create_progress_bar(
 # --- S3 Utilities ---
 
 def check_s3_file_exists(
-    s3_client: Any,
+    s3_client: S3Client,
     bucket: str,
     s3_key: str,
 ) -> bool:
@@ -133,10 +135,10 @@ def check_s3_file_exists(
         return False
 
 def upload_to_s3(
-    s3_client: Any,
+    s3_client: S3Client,
     bucket: str,
     s3_key: str,
-    data: Union[bytes, Any],  # Can be bytes or file-like object
+    data: Union[bytes, BinaryIO],  # Can be bytes or file-like object
     content_type: Optional[str] = None,
     quiet: bool = False,
     log_func: Callable[[str], None] = print,
