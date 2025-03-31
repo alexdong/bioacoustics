@@ -6,18 +6,22 @@ now with a delightful progress bar.
 
 import argparse
 import json
-import os
 import time
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-import requests
 import boto3  # type: ignore
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError  # type: ignore
+import requests
+from botocore.exceptions import (  # type: ignore
+    NoCredentialsError,
+    PartialCredentialsError,
+)
 from tqdm import tqdm
 
 from utils.download_utils import (
-    create_session, check_s3_file_exists, upload_to_s3,
-    create_progress_bar, DEFAULT_REQUEST_DELAY
+    DEFAULT_REQUEST_DELAY,
+    check_s3_file_exists,
+    create_progress_bar,
+    upload_to_s3,
 )
 
 # --- Constants ---
@@ -115,7 +119,7 @@ def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str
     processed_recordings_count: int = 0
     recording_pbar: Optional[tqdm] = None
 
-    print(f"[INFO] Fetching initial metadata to determine total recordings...")
+    print("[INFO] Fetching initial metadata to determine total recordings...")
 
     try:
         # First, get the total number of pages and recordings
@@ -147,7 +151,7 @@ def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str
             recording_pbar = create_progress_bar(
                 total=num_recordings_total,
                 desc="Processing Recordings",
-                unit="file"
+                unit="file",
             )
             
         except requests.exceptions.RequestException as e:
@@ -206,7 +210,7 @@ def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str
 def main() -> None:
     """Parses arguments and initiates the download and upload process."""
     parser = argparse.ArgumentParser(
-        description="Download Xeno-Canto recordings and metadata to S3."
+        description="Download Xeno-Canto recordings and metadata to S3.",
     )
     parser.add_argument(
         "-q",
@@ -239,7 +243,7 @@ def main() -> None:
     elif not s3_prefix:
         s3_prefix = ""
 
-    print(f"🚀 Starting Xeno-Canto download process!")
+    print("🚀 Starting Xeno-Canto download process!")
     print(f"🔍 Query: {args.query}")
     print(f"☁️  Target S3 Bucket: {args.bucket}")
     print(f"📁 Target S3 Prefix: {s3_prefix}")

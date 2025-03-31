@@ -1,8 +1,7 @@
-import os
-import time
 import json
-from typing import Any, Dict, Optional, Tuple, Union, Callable
+import os
 from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Union
 
 import requests
 from tqdm import tqdm
@@ -42,7 +41,7 @@ def create_session(headers: Optional[Dict[str, str]] = None) -> requests.Session
     return session
 
 def download_file(
-    url: str, 
+    url: str,
     output_path: Union[str, Path],
     session: Optional[requests.Session] = None,
     timeout: int = DEFAULT_TIMEOUT,
@@ -106,17 +105,17 @@ def save_json(data: Any, output_path: Union[str, Path]) -> bool:
 # --- Progress Tracking ---
 
 def create_progress_bar(
-    total: int, 
-    desc: str = "Downloading", 
+    total: int,
+    desc: str = "Downloading",
     unit: str = "file",
-    ncols: int = 100
+    ncols: int = 100,
 ) -> tqdm:
     """Create a tqdm progress bar with standard formatting."""
     return tqdm(
         total=total,
         desc=desc,
         unit=unit,
-        ncols=ncols
+        ncols=ncols,
     )
 
 # --- S3 Utilities ---
