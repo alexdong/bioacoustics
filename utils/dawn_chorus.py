@@ -6,11 +6,13 @@ import time
 from typing import Any, Dict, List, Tuple
 
 import requests
-from pathlib import Path
 
 from utils.download_utils import (
-    ensure_directory, get_file_extension, create_session,
-    download_file, save_json, DEFAULT_TIMEOUT
+    create_session,
+    download_file,
+    ensure_directory,
+    get_file_extension,
+    save_json,
 )
 
 # --- Configuration ---
