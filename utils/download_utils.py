@@ -1,9 +1,8 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, BinaryIO
+from typing import Any, BinaryIO, Callable, Dict, Optional, Union
 
-import boto3
 import requests
 from mypy_boto3_s3.client import S3Client
 from tqdm import tqdm

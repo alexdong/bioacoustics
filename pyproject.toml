@@ -7,6 +7,7 @@ requires-python = "==3.12.8"
 dependencies = [
     "accelerate>=1.0.1",
     "beautifulsoup4>=4.13.3",
+    "boto3>=1.37.23",
     "click>=8.1.8",
     "datasets>=3.1.0",
     "evaluate>=0.4.3",
@@ -16,6 +17,7 @@ dependencies = [
     "ipython>=8.12.3",
     "jinja2>=3.1.6",
     "levenshtein>=0.25.1",
+    "mypy-boto3-s3>=1.37.0",
     "ollama>=0.4.7",
     "openai>=1.66.3",
     "peft; sys_platform == 'linux'",
@@ -28,6 +30,18 @@ dependencies = [
     "transformers>=4.46.3",
     "unsloth>=2025.3.18; sys_platform=='linux'",
     "vllm>=0.8.2; sys_platform=='linux'",
+]
+
+[tool.setuptools.packages.find]
+include = [
+  "fine-tune*", 
+  "benchmark*", 
+  "ssl*", 
+  "test*", 
+  "utils*", 
+]
+exclude = [
+  "datasets/*",
 ]
 
 

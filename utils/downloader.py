@@ -1,17 +1,17 @@
 import argparse
 import os
-from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
-from utils.download_utils import ensure_directory, download_file
+from utils.download_utils import download_file, ensure_directory
+
 
 def find_and_download_files(
-    base_url: str, 
-    file_extension: str, 
-    output_dir: str
+    base_url: str,
+    file_extension: str,
+    output_dir: str,
 ) -> tuple[int, int]:
     """Find and download all files with the specified extension from a URL.
     
@@ -81,9 +81,9 @@ def main() -> None:
     args = parser.parse_args()
     
     links_found, links_downloaded = find_and_download_files(
-        args.url, 
-        args.extension, 
-        args.output_dir
+        args.url,
+        args.extension,
+        args.output_dir,
     )
 
     print("\n[*] --- Summary ---")

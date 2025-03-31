@@ -93,7 +93,7 @@ def download_and_upload_recording(
                  file_url = f"https://xeno-canto.org{file_url}"
 
         try:
-            time.sleep(DEFAULT_REQUEST_DELAY) # Delay *before* download request
+            #time.sleep(DEFAULT_REQUEST_DELAY) # Delay *before* download request
             response = requests.get(file_url, stream=True, timeout=60)
             response.raise_for_status()
 

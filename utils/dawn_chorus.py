@@ -84,7 +84,7 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
     
     for attempt in range(max_retries):
         try:
-            if download_file(audio_url, audio_filepath, session=session):
+            if download_file(audio_url, audio_filepath):
                 # Save record data as JSON
                 if save_json(record, json_filepath):
                     print(f"  Successfully saved: {audio_filename} and {json_filename}")
