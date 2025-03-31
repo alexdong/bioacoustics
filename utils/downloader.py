@@ -1,8 +1,10 @@
-import requests
-import os
 import argparse
+import os
 from urllib.parse import urljoin, urlparse
+
+import requests
 from bs4 import BeautifulSoup
+
 
 def download_file(url, folder_path):
     """Downloads a single file from a URL into the specified folder."""
@@ -64,7 +66,7 @@ def main():
         print(f"[!] Error fetching base URL {base_url}: {e}")
         return
 
-    print(f"[*] Parsing HTML content...")
+    print("[*] Parsing HTML content...")
     soup = BeautifulSoup(response.text, 'html.parser')
 
     links_found = 0
@@ -94,7 +96,7 @@ def main():
         #     ... check and download ...
 
 
-    print(f"\n[*] --- Summary ---")
+    print("\n[*] --- Summary ---")
     if links_found == 0:
         print(f"[*] No links ending with '{file_extension}' found on {base_url}.")
     else:
