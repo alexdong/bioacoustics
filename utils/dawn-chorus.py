@@ -3,17 +3,21 @@ import json
 import os
 import time
 import re
+import concurrent.futures
+from pathlib import Path
+from typing import Dict, Any, Optional, List
 
 # --- Configuration ---
 API_URL = "https://api.coreo.io/graphql"
 # IMPORTANT: This JWT token might expire. Get a fresh one from browser dev tools if needed.
 # Ensure this token is CURRENT.
 AUTH_TOKEN = "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJiMzA0MjUxNjljODkyMWZkYjA2ZTc3NjY1YjJiZDg5NSIsImlhdCI6MTYxNzY5Nzc2NSwiaXNzIjoiY29yZW8ifQ.v-S8zGmYdOcJGaw5XBQ3VGOu-pVdydOHiohELd9-8CU" # <-- REPLACE IF NEEDED
-DOWNLOAD_DIR = "dawn_chorus_audio"
+DOWNLOAD_DIR = "./datasets/dawn-chorus"
 RECORDS_PER_PAGE = 12  # Confirmed from the query (limit: 12)
 MAX_PAGES = None       # Set to a number (e.g., 10) to limit pages, or None for all
 START_OFFSET = 0       # Set to a higher value to resume download if needed
 SURVEY_ID = 734        # Confirmed from the variables (surveyId: 734)
+MAX_WORKERS = 8        # Number of parallel downloads
 
 # --- GraphQL Query (Exactly as observed in the request) ---
 GRAPHQL_QUERY = """
@@ -35,67 +39,89 @@ query DCGetRecordsWeb($surveyId: Int!, $offset: Int!){
 """
 
 # --- Helper Functions ---
-def sanitize_filename(filename):
-    """Removes or replaces characters invalid in filenames."""
-    if filename is None:
-        return "None"
-    # Remove invalid characters
-    sanitized = re.sub(r'[\\/*?:"<>|]', "", str(filename))
-    # Replace spaces with underscores
-    sanitized = sanitized.replace(" ", "_")
-    # Reduce consecutive underscores
-    sanitized = re.sub(r'_+', '_', sanitized)
-    # Remove leading/trailing underscores/periods
-    sanitized = sanitized.strip('_.')
-    # Handle potential empty strings after sanitization
-    if not sanitized:
-        return "InvalidChars"
-    return sanitized
-
-def download_audio(audio_url, filepath):
-    """Downloads an audio file from a URL to a local path."""
-    if not audio_url or not isinstance(audio_url, str) or not audio_url.startswith('http'):
-        print(f"    Invalid audio URL skipped: {audio_url}")
-        return False
+def get_file_extension(audio_url: str) -> str:
+    """Extract file extension from URL, defaulting to .wav if not found."""
     try:
-        print(f"    Downloading: {audio_url}")
-        # Use the session object for the download request as well
-        with session.get(audio_url, stream=True, timeout=60) as r:
-            r.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
-            # Check content type if possible (optional but good practice)
-            # content_type = r.headers.get('content-type', '').lower()
-            # if 'audio' not in content_type:
-            #     print(f"    Warning: URL {audio_url} did not return an audio content type ({content_type}). Skipping download.")
-            #     return False
+        file_extension = os.path.splitext(audio_url)[1]
+        if not file_extension or len(file_extension) > 5:  # Basic sanity check
+            print(f"    Warning: Unusual file extension '{file_extension}' for URL {audio_url}. Defaulting to .wav")
+            file_extension = ".wav"
+        return file_extension
+    except Exception:
+        print(f"    Warning: Could not parse extension from URL {audio_url}. Defaulting to .wav")
+        return ".wav"  # Default if extraction fails
 
-            with open(filepath, 'wb') as f:
+def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
+    """Downloads an audio file and saves record data as JSON."""
+    record_id = record.get("id")
+    record_data = record.get("data", {})
+    
+    if not isinstance(record_data, dict):
+        print(f"  Skipping record ID {record_id}: 'data' field is missing or not a dictionary.")
+        return False
+    
+    audio_url = record_data.get("audio")
+    if not audio_url or not isinstance(audio_url, str) or not audio_url.startswith('http'):
+        print(f"  Skipping record ID {record_id}: No valid 'audio' URL found.")
+        return False
+    
+    # Get file extension from URL
+    file_extension = get_file_extension(audio_url)
+    
+    # Create filenames
+    audio_filename = f"{record_id}{file_extension}"
+    json_filename = f"{record_id}.json"
+    
+    audio_filepath = os.path.join(DOWNLOAD_DIR, audio_filename)
+    json_filepath = os.path.join(DOWNLOAD_DIR, json_filename)
+    
+    # Check if files already exist
+    if os.path.exists(audio_filepath) and os.path.exists(json_filepath):
+        print(f"  Skipping record ID {record_id}: Files already exist")
+        return False
+    
+    # Download audio file
+    try:
+        print(f"  Downloading: {audio_url} -> {audio_filename}")
+        with session.get(audio_url, stream=True, timeout=60) as r:
+            r.raise_for_status()
+            with open(audio_filepath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
-        print(f"    Saved to: {filepath}")
+        
+        # Save record data as JSON
+        with open(json_filepath, 'w', encoding='utf-8') as f:
+            json.dump(record, f, indent=2)
+        
+        print(f"  Successfully saved: {audio_filename} and {json_filename}")
         return True
-    except requests.exceptions.MissingSchema:
-        print(f"    Invalid URL format (Missing http/https): {audio_url}")
-        return False
+    
     except requests.exceptions.RequestException as e:
-        print(f"    Error downloading {audio_url}: {e}")
-        # Clean up potentially incomplete file
-        if os.path.exists(filepath):
-            try:
-                os.remove(filepath)
-            except OSError: pass # Ignore error if file can't be removed immediately
+        print(f"  Error downloading {audio_url}: {e}")
+        # Clean up potentially incomplete files
+        for filepath in [audio_filepath, json_filepath]:
+            if os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
         return False
+    
     except Exception as e:
-        print(f"    Unexpected error during download of {audio_url}: {e}")
-        if os.path.exists(filepath):
-            try:
-                os.remove(filepath)
-            except OSError: pass
+        print(f"  Unexpected error during download of {audio_url}: {e}")
+        for filepath in [audio_filepath, json_filepath]:
+            if os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
         return False
 
 # --- Main Script ---
 if __name__ == "__main__":
     print(f"Starting download from Dawn Chorus (Survey ID: {SURVEY_ID})")
-    print(f"Saving audio files to: {DOWNLOAD_DIR}")
+    print(f"Saving files to: {DOWNLOAD_DIR}")
+    print(f"Using {MAX_WORKERS} parallel workers for downloads")
 
     # Create download directory if it doesn't exist
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -103,22 +129,24 @@ if __name__ == "__main__":
     current_offset = START_OFFSET
     pages_fetched = 0
     total_downloaded = 0
-    session = requests.Session() # Use a session for potential connection reuse & headers
-
-    # Set headers for the session (applies to all requests made with this session)
+    
+    # Set up session with headers
+    session = requests.Session()
     headers = {
         "Accept": "*/*",
         "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9", # Keep it general
+        "Accept-Language": "en-US,en;q=0.9",
         "Authorization": AUTH_TOKEN,
         "Connection": "keep-alive",
         "Content-Type": "application/json",
-        "Origin": "https://explore.dawn-chorus.org", # Crucial header
-        "Referer": "https://explore.dawn-chorus.org/", # Crucial header
-        # Mimic browser User-Agent
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" # Or use the one from your request
+        "Origin": "https://explore.dawn-chorus.org",
+        "Referer": "https://explore.dawn-chorus.org/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
     session.headers.update(headers)
+
+    # Create ThreadPoolExecutor for parallel downloads
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
 
     while True:
@@ -176,83 +204,37 @@ if __name__ == "__main__":
         records = data.get("data", {}).get("records", [])
 
         if not records:
-            # It's possible to get an empty list before the *very* end if a page has only private records filtered out
-            # A more robust check might be needed if the API guarantees *something* until the absolute end
             print("No more records found in the response for this offset. Download likely complete.")
             break
 
         print(f"Found {len(records)} records on this page.")
         pages_fetched += 1
-        page_download_count = 0
-
+        
+        # Submit download tasks to the thread pool
+        futures = []
         for record in records:
-            record_id = record.get("id")
-            record_data = record.get("data", {}) # Get the 'data' sub-dictionary
+            futures.append(executor.submit(download_audio, session, record))
+        
+        # Wait for all downloads to complete
+        page_download_count = 0
+        for future in concurrent.futures.as_completed(futures):
+            if future.result():
+                page_download_count += 1
+                total_downloaded += 1
+        
+        print(f"Downloaded {page_download_count} files from this page.")
 
-            if not isinstance(record_data, dict): # Basic check if data is missing or wrong type
-                 print(f"  Skipping record ID {record_id}: 'data' field is missing or not a dictionary.")
-                 continue
-
-            audio_url = record_data.get("audio")
-
-            if not audio_url:
-                print(f"  Skipping record ID {record_id}: No 'audio' URL found in record data.")
-                continue
-
-            # --- Construct Filename ---
-            species_list = record_data.get("species", [])
-            # Ensure species names are sanitized
-            species_str = sanitize_filename("_".join(species_list)) if species_list else "UnknownSpecies"
-            # Sanitize date/time - handle potential None
-            date_time_raw = record_data.get("date_time", "UnknownDate")
-            date_str = "UnknownDate"
-            if date_time_raw:
-                 date_str = date_time_raw.split("T")[0] # Get YYYY-MM-DD part
-
-            city_str = sanitize_filename(record_data.get("city", "UnknownCity"))
-            country_str = sanitize_filename(record_data.get("country", "UnknownCountry"))
-
-            filename_base = f"{country_str}_{city_str}_{species_str}_{record_id}_{date_str}"
-
-            # Extract file extension safely
-            try:
-                file_extension = os.path.splitext(audio_url)[1]
-                if not file_extension or len(file_extension) > 5: # Basic sanity check
-                    print(f"    Warning: Unusual file extension '{file_extension}' for URL {audio_url}. Defaulting to .wav")
-                    file_extension = ".wav"
-            except Exception:
-                 print(f"    Warning: Could not parse extension from URL {audio_url}. Defaulting to .wav")
-                 file_extension = ".wav" # Default if extraction fails
-
-
-            filename = f"{filename_base}{file_extension}"
-            filepath = os.path.join(DOWNLOAD_DIR, filename)
-
-            # --- Download ---
-            if os.path.exists(filepath):
-                print(f"  Skipping record ID {record_id}: File already exists ({filepath})")
-            else:
-                if download_audio(audio_url, filepath):
-                    total_downloaded += 1
-                    page_download_count += 1
-                    time.sleep(0.5) # Small delay between downloads
-                else:
-                    # Log failure and continue with the next record
-                    print(f"  Failed to download record ID {record_id}. Continuing...")
-                    # Optional: Add failed URLs to a list for later retry
-                    time.sleep(2) # Longer pause after a failure
-
-        # --- Prepare for next page ---
-        # IMPORTANT: Increment offset by the number of records *received* on the page
-        # This handles cases where the last page might have fewer than RECORDS_PER_PAGE items.
+        # Prepare for next page
         if len(records) == 0 and page_download_count == 0:
-             print("Received an empty list of records, assuming end of data.")
-             break # Exit loop if we received an empty list
+            print("Received an empty list of records, assuming end of data.")
+            break
 
-        current_offset += len(records) # Increment offset correctly
-        print(f"Total audio files downloaded so far: {total_downloaded}")
-
+        current_offset += len(records)
+        print(f"Total files downloaded so far: {total_downloaded}")
+        
         # Be polite to the server - wait before fetching the next page
-        time.sleep(2) # Wait 2 seconds between page requests
+        time.sleep(2)
 
-    print(f"\nFinished. Total audio files downloaded in this run: {total_downloaded}")
+    # Shutdown the executor
+    executor.shutdown()
+    print(f"\nFinished. Total files downloaded in this run: {total_downloaded}")
