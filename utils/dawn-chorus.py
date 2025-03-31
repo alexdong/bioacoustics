@@ -82,7 +82,7 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
     # Download audio file
     try:
         print(f"  Downloading: {audio_url} -> {audio_filename}")
-        with session.get(audio_url, stream=True, timeout=60) as r:
+        with requests.get(audio_url, stream=True, timeout=60) as r:
             r.raise_for_status()
             with open(audio_filepath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
