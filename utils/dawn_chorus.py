@@ -77,13 +77,26 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
         print(f"  Skipping record ID {record_id}: Files already exist")
         return False
     
-    # Download audio file
+    # Download audio file with retry logic
     print(f"  Downloading: {audio_url} -> {audio_filename}")
-    if download_file(audio_url, audio_filepath, session=session):
-        # Save record data as JSON
-        if save_json(record, json_filepath):
-            print(f"  Successfully saved: {audio_filename} and {json_filename}")
-            return True
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            if download_file(audio_url, audio_filepath, session=session):
+                # Save record data as JSON
+                if save_json(record, json_filepath):
+                    print(f"  Successfully saved: {audio_filename} and {json_filename}")
+                    return True
+                break
+        except requests.exceptions.ConnectionError as e:
+            if attempt < max_retries - 1:
+                print(f"  Connection dropped while downloading {audio_filename}. Retrying in {retry_delay} seconds... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print(f"  Failed to download {audio_filename} after {max_retries} attempts: {e}")
     
     return False
 
@@ -102,25 +115,49 @@ def fetch_records_page(session: requests.Session, offset: int) -> Tuple[List[Dic
         },
     }
 
-    try:
-        response = session.post(API_URL, json=payload, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-
-    except requests.exceptions.Timeout:
-        print("Request timed out. Retrying after 10 seconds...")
-        time.sleep(10)
-        return [], True  # Empty list but continue trying
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP Request failed: {e}")
-        if 'response' in locals():
-            print(f"Status Code: {response.status_code}")
-            print(f"Response Text: {response.text[:500]}...")
-        return [], False  # Stop processing
-    except json.JSONDecodeError:
-        print("Failed to decode JSON response. Response text:")
-        print(response.text[:1000])
-        return [], False  # Stop processing
+    max_retries = 3
+    retry_delay = 5  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            response = session.post(API_URL, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            break  # Success, exit the retry loop
+            
+        except requests.exceptions.ConnectionError as e:
+            if attempt < max_retries - 1:
+                print(f"Connection dropped. Retrying in {retry_delay} seconds... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            print(f"Failed to connect after {max_retries} attempts: {e}")
+            return [], False  # Stop processing
+            
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                print(f"Request timed out. Retrying in {retry_delay} seconds... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            print(f"Request timed out after {max_retries} attempts.")
+            return [], False  # Stop processing
+            
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP Request failed: {e}")
+            if 'response' in locals():
+                print(f"Status Code: {response.status_code}")
+                print(f"Response Text: {response.text[:500]}...")
+            return [], False  # Stop processing
+            
+        except json.JSONDecodeError:
+            print("Failed to decode JSON response. Response text:")
+            print(response.text[:1000])
+            return [], False  # Stop processing
+    
+    # If we got here without a successful response, return empty
+    if 'data' not in locals():
+        return [], False
 
     # Check for GraphQL errors within the response
     if "errors" in data:
