@@ -6,6 +6,12 @@ import time
 from typing import Any, Dict, List, Tuple
 
 import requests
+from pathlib import Path
+
+from utils.download_utils import (
+    ensure_directory, get_file_extension, create_session,
+    download_file, save_json, DEFAULT_TIMEOUT
+)
 
 # --- Configuration ---
 API_URL = "https://api.coreo.io/graphql"
@@ -38,17 +44,6 @@ query DCGetRecordsWeb($surveyId: Int!, $offset: Int!){
   }
 """
 
-def get_file_extension(audio_url: str) -> str:
-    """Extract file extension from URL, defaulting to .wav if not found."""
-    try:
-        file_extension = os.path.splitext(audio_url)[1]
-        if not file_extension or len(file_extension) > 5:
-            print(f"    Warning: Unusual file extension '{file_extension}' for URL {audio_url}. Defaulting to .wav")
-            file_extension = ".wav"
-        return file_extension
-    except Exception:
-        print(f"    Warning: Could not parse extension from URL {audio_url}. Defaulting to .wav")
-        return ".wav"
 
 def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
     """Downloads an audio file and saves record data as JSON."""
@@ -71,8 +66,9 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
     audio_filename = f"{record_id}{file_extension}"
     json_filename = f"{record_id}.json"
     
-    audio_filepath = os.path.join(DOWNLOAD_DIR, audio_filename)
-    json_filepath = os.path.join(DOWNLOAD_DIR, json_filename)
+    download_dir_path = ensure_directory(DOWNLOAD_DIR)
+    audio_filepath = download_dir_path / audio_filename
+    json_filepath = download_dir_path / json_filename
     
     # Check if files already exist
     if os.path.exists(audio_filepath) and os.path.exists(json_filepath):
@@ -80,58 +76,15 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
         return False
     
     # Download audio file
-    try:
-        print(f"  Downloading: {audio_url} -> {audio_filename}")
-        with requests.get(audio_url, stream=True, timeout=60) as r:
-            r.raise_for_status()
-            with open(audio_filepath, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        
+    print(f"  Downloading: {audio_url} -> {audio_filename}")
+    if download_file(audio_url, audio_filepath, session=session):
         # Save record data as JSON
-        with open(json_filepath, 'w', encoding='utf-8') as f:
-            json.dump(record, f, indent=2)
-        
-        print(f"  Successfully saved: {audio_filename} and {json_filename}")
-        return True
+        if save_json(record, json_filepath):
+            print(f"  Successfully saved: {audio_filename} and {json_filename}")
+            return True
     
-    except requests.exceptions.RequestException as e:
-        print(f"  Error downloading {audio_url}: {e}")
-        # Clean up potentially incomplete files
-        for filepath in [audio_filepath, json_filepath]:
-            if os.path.exists(filepath):
-                try:
-                    os.remove(filepath)
-                except OSError:
-                    pass
-        return False
-    
-    except Exception as e:
-        print(f"  Unexpected error during download of {audio_url}: {e}")
-        for filepath in [audio_filepath, json_filepath]:
-            if os.path.exists(filepath):
-                try:
-                    os.remove(filepath)
-                except OSError:
-                    pass
-        return False
+    return False
 
-def create_session() -> requests.Session:
-    """Create and configure a requests session with appropriate headers."""
-    session = requests.Session()
-    headers = {
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Authorization": AUTH_TOKEN,
-        "Connection": "keep-alive",
-        "Content-Type": "application/json",
-        "Origin": "https://explore.dawn-chorus.org",
-        "Referer": "https://explore.dawn-chorus.org/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    }
-    session.headers.update(headers)
-    return session
 
 def fetch_records_page(session: requests.Session, offset: int) -> Tuple[List[Dict[str, Any]], bool]:
     """Fetch a page of records from the API.
@@ -211,15 +164,26 @@ def download_all_records() -> None:
     print(f"Saving files to: {DOWNLOAD_DIR}")
     print(f"Using {MAX_WORKERS} parallel workers for downloads")
 
-    # Create download directory if it doesn't exist
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    # Create download directory
+    ensure_directory(DOWNLOAD_DIR)
 
     current_offset = START_OFFSET
     pages_fetched = 0
     total_downloaded = 0
     
-    # Set up session and executor
-    session = create_session()
+    # Set up session with appropriate headers
+    headers = {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Authorization": AUTH_TOKEN,
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Origin": "https://explore.dawn-chorus.org",
+        "Referer": "https://explore.dawn-chorus.org/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    }
+    session = create_session(headers)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
     try:

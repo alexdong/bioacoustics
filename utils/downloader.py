@@ -1,56 +1,23 @@
 import argparse
 import os
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
+from utils.download_utils import ensure_directory, download_file
 
-def download_file(url: str, folder_path: str) -> bool:
-    """Downloads a single file from a URL into the specified folder."""
-    try:
-        # Ensure the folder exists
-        os.makedirs(folder_path, exist_ok=True)
-
-        # Get the filename from the URL
-        parsed_url = urlparse(url)
-        filename = os.path.basename(parsed_url.path)
-        if not filename:
-            print(f"-> Could not determine filename for URL: {url}. Skipping.")
-            return False
-
-        local_filepath = os.path.join(folder_path, filename)
-
-        print(f"--> Downloading {filename} from {url}...")
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
-            with open(local_filepath, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        print(f"--> Successfully saved to {local_filepath}")
-        return True
-
-    except requests.exceptions.RequestException as e:
-        print(f"--> ERROR downloading {url}: {e}")
-    except OSError as e:
-        print(f"--> ERROR saving file {local_filepath}: {e}")
-    except Exception as e:
-         print(f"--> An unexpected error occurred for {url}: {e}")
-    return False
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Download all files with a specific extension from a given URL.")
-    parser.add_argument("url", help="The URL of the page containing links to files.")
-    parser.add_argument("extension", help="The file extension to download (e.g., .mp3, .pdf, *.jpg).")
-    parser.add_argument("-o", "--output-dir", default="downloads",
-                        help="Directory to save downloaded files (default: ./downloads).")
-
-    args = parser.parse_args()
-
-    base_url = args.url
-    output_dir = args.output_dir
-    file_extension = args.extension
-
+def find_and_download_files(
+    base_url: str, 
+    file_extension: str, 
+    output_dir: str
+) -> tuple[int, int]:
+    """Find and download all files with the specified extension from a URL.
+    
+    Returns:
+        Tuple of (links_found, links_downloaded)
+    """
     # Standardize extension (remove *, ensure leading .)
     if file_extension.startswith("*"):
         file_extension = file_extension[1:]
@@ -64,13 +31,16 @@ def main() -> None:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"[!] Error fetching base URL {base_url}: {e}")
-        return
+        return (0, 0)
 
     print("[*] Parsing HTML content...")
     soup = BeautifulSoup(response.text, 'html.parser')
 
     links_found = 0
     links_downloaded = 0
+    
+    # Ensure output directory exists
+    output_path = ensure_directory(output_dir)
 
     print(f"[*] Searching for links ending with '{file_extension}'...")
     # Find all 'a' tags with an 'href' attribute
@@ -85,23 +55,43 @@ def main() -> None:
         parsed_link_url = urlparse(absolute_url)
         if parsed_link_url.path.lower().endswith(file_extension):
             links_found += 1
+            
+            # Get the filename from the URL
+            filename = os.path.basename(parsed_link_url.path)
+            if not filename:
+                print(f"-> Could not determine filename for URL: {absolute_url}. Skipping.")
+                continue
+                
+            local_filepath = output_path / filename
+            
             print(f"\n[*] Found potential file: {absolute_url}")
-            if download_file(absolute_url, output_dir):
+            if download_file(absolute_url, local_filepath):
+                print(f"--> Successfully saved to {local_filepath}")
                 links_downloaded += 1
-        # Optional: Add checks for other tags like <img> src, <audio> src etc. if needed
-        # Example for images:
-        # elif soup.find_all('img', src=True) and file_extension in ['.jpg', '.jpeg', '.png', '.gif']:
-        #     src = link['src']
-        #     absolute_url = urljoin(base_url, src)
-        #     ... check and download ...
 
+    return links_found, links_downloaded
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Download all files with a specific extension from a given URL.")
+    parser.add_argument("url", help="The URL of the page containing links to files.")
+    parser.add_argument("extension", help="The file extension to download (e.g., .mp3, .pdf, *.jpg).")
+    parser.add_argument("-o", "--output-dir", default="downloads",
+                        help="Directory to save downloaded files (default: ./downloads).")
+
+    args = parser.parse_args()
+    
+    links_found, links_downloaded = find_and_download_files(
+        args.url, 
+        args.extension, 
+        args.output_dir
+    )
 
     print("\n[*] --- Summary ---")
     if links_found == 0:
-        print(f"[*] No links ending with '{file_extension}' found on {base_url}.")
+        print(f"[*] No links ending with '{args.extension}' found on {args.url}.")
     else:
         print(f"[*] Found {links_found} potential link(s).")
-        print(f"[*] Successfully downloaded {links_downloaded} file(s) to '{output_dir}'.")
+        print(f"[*] Successfully downloaded {links_downloaded} file(s) to '{args.output_dir}'.")
     print("[*] Done.")
 
 

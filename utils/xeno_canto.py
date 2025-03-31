@@ -8,62 +8,25 @@ import argparse
 import json
 import os
 import time
-import requests
-import boto3 # type: ignore
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError # type: ignore
 from typing import Dict, Any, List, Optional
-from tqdm import tqdm # Import tqdm
+
+import requests
+import boto3  # type: ignore
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError  # type: ignore
+from tqdm import tqdm
+
+from utils.download_utils import (
+    create_session, check_s3_file_exists, upload_to_s3,
+    create_progress_bar, DEFAULT_REQUEST_DELAY
+)
 
 # --- Constants ---
-
 API_ENDPOINT: str = "https://xeno-canto.org/api/2/recordings"
 S3_BUCKET: str = "alexdong-bioacoustics"
 S3_PREFIX: str = "xeno-canto/"
-REQUEST_DELAY_SECONDS: float = 1.1 # Slightly more than 1 to be safe
 
 # --- Core Functions ---
 
-def upload_to_s3(
-    s3_client: Any, # boto3 S3 client is not easily typed without mypy stubs
-    bucket: str,
-    s3_key: str,
-    data: bytes,
-    content_type: str | None = None,
-    quiet: bool = False, # Added flag to suppress print for progress bar
-) -> None:
-    """Uploads data (bytes) to a specific S3 key."""
-    if not quiet:
-        print(f"[INFO] Uploading to s3://{bucket}/{s3_key}...")
-    try:
-        extra_args = {}
-        if content_type:
-            extra_args['ContentType'] = content_type
-
-        s3_client.put_object(Bucket=bucket, Key=s3_key, Body=data, **extra_args)
-        if not quiet:
-            print(f"[SUCCESS] Successfully uploaded to s3://{bucket}/{s3_key}")
-    except (NoCredentialsError, PartialCredentialsError) as e:
-        # Use tqdm.write if available to avoid breaking bar, otherwise print
-        log_func = tqdm.write if tqdm else print
-        log_func(f"[ERROR] S3 credentials not found or incomplete: {e}")
-        raise
-    except Exception as e:
-        log_func = tqdm.write if tqdm else print
-        log_func(f"[ERROR] Failed to upload {s3_key} to S3: {e}")
-        raise
-
-
-def check_s3_file_exists(
-    s3_client: Any,
-    bucket: str,
-    s3_key: str,
-) -> bool:
-    """Checks if a file exists in S3."""
-    try:
-        s3_client.head_object(Bucket=bucket, Key=s3_key)
-        return True
-    except Exception:
-        return False
 
 
 def download_and_upload_recording(
@@ -109,7 +72,7 @@ def download_and_upload_recording(
     # Upload JSON metadata if it doesn't exist
     if not json_exists:
         json_data = json.dumps(recording, indent=4).encode("utf-8")
-        upload_to_s3(s3_client, bucket, json_s3_key, json_data, "application/json", quiet=bool(pbar))
+        upload_to_s3(s3_client, bucket, json_s3_key, json_data, "application/json", quiet=bool(pbar), log_func=log_func)
 
     # Download and upload audio file if it doesn't exist
     if not audio_exists:
@@ -125,30 +88,19 @@ def download_and_upload_recording(
                  file_url = f"https://xeno-canto.org{file_url}"
 
         try:
-            time.sleep(REQUEST_DELAY_SECONDS) # Delay *before* download request
+            time.sleep(DEFAULT_REQUEST_DELAY) # Delay *before* download request
             response = requests.get(file_url, stream=True, timeout=60)
             response.raise_for_status()
 
+            content_type = response.headers.get('Content-Type', 'application/octet-stream')
+            upload_to_s3(s3_client, bucket, audio_s3_key, response.raw, content_type, quiet=bool(pbar), log_func=log_func)
         except requests.exceptions.RequestException as e:
             log_func(f"[ERROR] Failed to download audio for {recording_id}: {e}")
-            raise
-
-        try:
-            content_type = response.headers.get('Content-Type', 'application/octet-stream')
-            s3_client.upload_fileobj(
-                response.raw,
-                bucket,
-                audio_s3_key,
-                ExtraArgs={'ContentType': content_type}
-            )
-        except (NoCredentialsError, PartialCredentialsError) as e:
-            log_func(f"[ERROR] S3 credentials not found or incomplete during audio upload for {recording_id}: {e}")
-            raise
         except Exception as e:
             log_func(f"[ERROR] Failed to upload audio for {recording_id} to S3: {e}")
-            raise
         finally:
-            response.close()
+            if 'response' in locals():
+                response.close()
 
     # Update Progress Bar (after successful completion of both uploads for this recording)
     if pbar:
@@ -192,11 +144,10 @@ def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str
                 num_recordings_total = max(0, num_recordings_total - skipped_recordings)
             
             # Initialize the progress bar here
-            recording_pbar = tqdm(
+            recording_pbar = create_progress_bar(
                 total=num_recordings_total,
                 desc="Processing Recordings",
-                unit="file",
-                ncols=100
+                unit="file"
             )
             
         except requests.exceptions.RequestException as e:
@@ -213,7 +164,7 @@ def fetch_and_process_pages(query: str, s3_client: Any, bucket: str, prefix: str
             log_func(f"[INFO] Fetching page {current_page} / {total_pages}...")
 
             try:
-                time.sleep(REQUEST_DELAY_SECONDS) # Delay *before* metadata page request
+                time.sleep(DEFAULT_REQUEST_DELAY) # Delay *before* metadata page request
                 response = requests.get(api_url, timeout=30)
                 response.raise_for_status()
                 data: Dict[str, Any] = response.json()
@@ -293,7 +244,7 @@ def main() -> None:
     print(f"☁️  Target S3 Bucket: {args.bucket}")
     print(f"📁 Target S3 Prefix: {s3_prefix}")
     print(f"📄 Starting from page: {args.start_page}")
-    print(f"⏱️  API Delay: {REQUEST_DELAY_SECONDS} seconds between requests")
+    print(f"⏱️  API Delay: {DEFAULT_REQUEST_DELAY} seconds between requests")
 
     try:
         s3_client = boto3.client("s3")
