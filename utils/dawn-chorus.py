@@ -1,11 +1,11 @@
-import requests
+import concurrent.futures
 import json
+import multiprocessing
 import os
 import time
-import concurrent.futures
-from pathlib import Path
-import multiprocessing
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
+
+import requests
 
 # --- Configuration ---
 API_URL = "https://api.coreo.io/graphql"
@@ -128,7 +128,7 @@ def create_session() -> requests.Session:
         "Content-Type": "application/json",
         "Origin": "https://explore.dawn-chorus.org",
         "Referer": "https://explore.dawn-chorus.org/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     }
     session.headers.update(headers)
     return session
@@ -143,8 +143,8 @@ def fetch_records_page(session: requests.Session, offset: int) -> Tuple[List[Dic
         "query": GRAPHQL_QUERY,
         "variables": {
             "surveyId": SURVEY_ID,
-            "offset": offset
-        }
+            "offset": offset,
+        },
     }
 
     try:
@@ -182,7 +182,7 @@ def fetch_records_page(session: requests.Session, offset: int) -> Tuple[List[Dic
     records = data.get("data", {}).get("records", [])
     return records, True  # Continue processing
 
-def process_records_page(session: requests.Session, executor: concurrent.futures.ThreadPoolExecutor, 
+def process_records_page(session: requests.Session, executor: concurrent.futures.ThreadPoolExecutor,
                          records: List[Dict[str, Any]]) -> int:
     """Process a page of records by downloading audio files in parallel.
     
