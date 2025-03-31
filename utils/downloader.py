@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def download_file(url, folder_path):
+def download_file(url: str, folder_path: str) -> bool:
     """Downloads a single file from a URL into the specified folder."""
     try:
         # Ensure the folder exists
@@ -38,7 +38,7 @@ def download_file(url, folder_path):
          print(f"--> An unexpected error occurred for {url}: {e}")
     return False
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Download all files with a specific extension from a given URL.")
     parser.add_argument("url", help="The URL of the page containing links to files.")
     parser.add_argument("extension", help="The file extension to download (e.g., .mp3, .pdf, *.jpg).")
