@@ -4,8 +4,7 @@ from matplotlib.widgets import Slider, Button
 import librosa
 import librosa.display
 import soundfile as sf
-import tkinter as tk
-from tkinter import filedialog
+from PySide6.QtWidgets import QApplication, QFileDialog
 import os
 
 # Initial parameters
@@ -23,9 +22,7 @@ class SpectrogramExplorer:
         self.fig = None
         self.ax = None
         
-        # Initialize GUI
-        self.root = tk.Tk()
-        self.root.withdraw()  # Hide main tk window
+        # Load audio file using PySide6 dialog
         self.load_audio_file()
         
         if self.audio_path:
@@ -33,10 +30,18 @@ class SpectrogramExplorer:
             plt.show()
 
     def load_audio_file(self):
-        file_path = filedialog.askopenfilename(
-            title="Select audio file",
-            filetypes=[("Audio Files", "*.wav *.mp3 *.flac"), ("All Files", "*.*")]
+        # Initialize QApplication (required for PySide6)
+        app = QApplication.instance()
+        if not app:
+            app = QApplication([])
+        
+        file_path, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select audio file",
+            "",
+            "Audio Files (*.wav *.mp3 *.flac);;All Files (*.*)"
         )
+        
         if file_path:
             self.audio_path = file_path
             self.y, self.sr = librosa.load(file_path, sr=None)
