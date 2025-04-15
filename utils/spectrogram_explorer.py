@@ -1,17 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+import matplotlib
+import sys
+
+# Set the backend explicitly before importing FigureCanvas
+matplotlib.use('QtAgg')  # This should work with PySide6
+
 try:
-    # Try Qt6 backend first (newer matplotlib versions)
-    from matplotlib.backends.backend_qt6agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 except ImportError:
     try:
         # Fall back to Qt5 backend
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
     except ImportError:
-        # Last resort - use the default backend
-        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        print("Warning: Qt backends not available. Using default backend.")
+        print("Error: Qt backends not available. Please install matplotlib with Qt support.")
+        sys.exit(1)
 import librosa
 import librosa.display
 import soundfile as sf
