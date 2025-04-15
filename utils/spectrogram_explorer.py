@@ -368,8 +368,9 @@ class SpectrogramExplorer(QMainWindow):
                 fmax=freq_max
             )
             
-            # Set interpolation for the image
-            img.set_interpolation(self.current_interpolation)
+            # Set interpolation for the axes images
+            for image in self.canvas.ax.get_images():
+                image.set_interpolation(self.current_interpolation)
             
             self.canvas.ax.set_title(
                 f'Spectrogram: {os.path.basename(self.audio_path)}\n'
