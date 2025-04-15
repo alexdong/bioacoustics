@@ -76,7 +76,7 @@ class SpectrogramExplorer(QMainWindow):
         controls_layout = QGridLayout()
         
         # FFT Size slider
-        self.frame_length_label = QLabel(f"FFT Size: {INIT_FRAME_LENGTH}")
+        self.frame_length_label = QLabel(f"FFT Size: {INIT_FRAME_LENGTH} (256-8192)")
         self.frame_length_slider = QSlider(Qt.Horizontal)
         self.frame_length_slider.setMinimum(256)
         self.frame_length_slider.setMaximum(8192)
@@ -85,7 +85,7 @@ class SpectrogramExplorer(QMainWindow):
         self.frame_length_slider.valueChanged.connect(self.on_frame_length_changed)
         
         # Hop Length slider
-        self.hop_length_label = QLabel(f"Hop Length: {INIT_HOP_LENGTH}")
+        self.hop_length_label = QLabel(f"Hop Length: {INIT_HOP_LENGTH} (64-2048)")
         self.hop_length_slider = QSlider(Qt.Horizontal)
         self.hop_length_slider.setMinimum(64)
         self.hop_length_slider.setMaximum(2048)
@@ -94,7 +94,7 @@ class SpectrogramExplorer(QMainWindow):
         self.hop_length_slider.valueChanged.connect(self.on_hop_length_changed)
         
         # dB Range slider
-        self.db_range_label = QLabel(f"dB Range: {INIT_DB_RANGE}")
+        self.db_range_label = QLabel(f"dB Range: {INIT_DB_RANGE} (20-120)")
         self.db_range_slider = QSlider(Qt.Horizontal)
         self.db_range_slider.setMinimum(20)
         self.db_range_slider.setMaximum(120)
@@ -102,7 +102,7 @@ class SpectrogramExplorer(QMainWindow):
         self.db_range_slider.valueChanged.connect(self.on_db_range_changed)
         
         # Mel bins control (for mel spectrograms)
-        self.n_mels_label = QLabel(f"Frequency Bins: {INIT_N_MELS}")
+        self.n_mels_label = QLabel(f"Frequency Bins: {INIT_N_MELS} (32-512)")
         self.n_mels_spinbox = QSpinBox()
         self.n_mels_spinbox.setMinimum(32)
         self.n_mels_spinbox.setMaximum(512)
@@ -110,7 +110,7 @@ class SpectrogramExplorer(QMainWindow):
         self.n_mels_spinbox.valueChanged.connect(self.on_n_mels_changed)
         
         # DPI control for resolution
-        self.dpi_label = QLabel(f"DPI (Resolution): {INIT_DPI}")
+        self.dpi_label = QLabel(f"DPI (Resolution): {INIT_DPI} (72-300)")
         self.dpi_spinbox = QSpinBox()
         self.dpi_spinbox.setMinimum(72)
         self.dpi_spinbox.setMaximum(300)
@@ -222,7 +222,7 @@ class SpectrogramExplorer(QMainWindow):
         if value < 256:
             value = 256
         self.frame_length_slider.setValue(value)
-        self.frame_length_label.setText(f"FFT Size: {value}")
+        self.frame_length_label.setText(f"FFT Size: {value} (256-8192)")
         self.update_spectrogram()
 
     @Slot()
@@ -233,25 +233,25 @@ class SpectrogramExplorer(QMainWindow):
         if value < 64:
             value = 64
         self.hop_length_slider.setValue(value)
-        self.hop_length_label.setText(f"Hop Length: {value}")
+        self.hop_length_label.setText(f"Hop Length: {value} (64-2048)")
         self.update_spectrogram()
 
     @Slot()
     def on_db_range_changed(self):
         value = self.db_range_slider.value()
-        self.db_range_label.setText(f"dB Range: {value}")
+        self.db_range_label.setText(f"dB Range: {value} (20-120)")
         self.update_spectrogram()
         
     @Slot()
     def on_n_mels_changed(self):
         value = self.n_mels_spinbox.value()
-        self.n_mels_label.setText(f"Frequency Bins: {value}")
+        self.n_mels_label.setText(f"Frequency Bins: {value} (32-512)")
         self.update_spectrogram()
         
     @Slot()
     def on_dpi_changed(self):
         value = self.dpi_spinbox.value()
-        self.dpi_label.setText(f"DPI (Resolution): {value}")
+        self.dpi_label.setText(f"DPI (Resolution): {value} (72-300)")
         self.dpi = value
         # Recreate the canvas with new DPI
         self.canvas.fig.set_dpi(value)
@@ -279,7 +279,7 @@ class SpectrogramExplorer(QMainWindow):
             self,
             "Select audio file",
             "",
-            "Audio Files (*.wav *.mp3 *.flac);;All Files (*.*)"
+            "Audio Files (*.wav *.mp3 *.flac *.ogg);;All Files (*.*)"
         )
         
         if file_path:
