@@ -1,30 +1,22 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import matplotlib
 import sys
-
-# Set the backend explicitly before importing FigureCanvas
-matplotlib.use('QtAgg')  # This should work with PySide6
-
-try:
-    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-except ImportError:
-    try:
-        # Fall back to Qt5 backend
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    except ImportError:
-        print("Error: Qt backends not available. Please install matplotlib with Qt support.")
-        sys.exit(1)
+import os
 import librosa
 import librosa.display
-import soundfile as sf
-from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QVBoxLayout, 
-                              QHBoxLayout, QSlider, QPushButton, QLabel, QWidget, 
-                              QComboBox, QGroupBox, QGridLayout)
+
+# Set the backend explicitly before importing FigureCanvas
+matplotlib.use('QtAgg')
+
+# Import after setting the backend
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from PySide6.QtWidgets import (
+    QApplication, QFileDialog, QMainWindow, QVBoxLayout, 
+    QSlider, QPushButton, QLabel, QWidget, 
+    QComboBox, QGroupBox, QGridLayout
+)
 from PySide6.QtCore import Qt, Slot
-import os
-import sys
 
 # Initial parameters
 INIT_FRAME_LENGTH = 2048
@@ -46,6 +38,7 @@ class SpectrogramExplorer(QMainWindow):
         self.audio_path = None
         self.y = None
         self.sr = None
+        self.colorbar = None  # Track the colorbar to prevent duplicates
         
         # Available colormaps
         self.cmaps = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
@@ -189,11 +182,14 @@ class SpectrogramExplorer(QMainWindow):
             self.update_spectrogram()
 
     def compute_spectrogram(self, frame_length, hop_length, scale):
-        if not self.y is None:
+        if self.y is not None:
             if scale == 'mel':
-                S = librosa.feature.melspectrogram(y=self.y, sr=self.sr, 
-                                                n_fft=frame_length, 
-                                                hop_length=hop_length)
+                S = librosa.feature.melspectrogram(
+                    y=self.y, 
+                    sr=self.sr, 
+                    n_fft=frame_length, 
+                    hop_length=hop_length
+                )
             else:
                 S = np.abs(librosa.stft(self.y, n_fft=frame_length, hop_length=hop_length))
             
@@ -208,25 +204,33 @@ class SpectrogramExplorer(QMainWindow):
         hop_length = self.hop_length_slider.value()
         db_range = self.db_range_slider.value()
         
-        # Clear the axis
-        self.canvas.ax.clear()
+        # Clear the figure completely to prevent colorbar duplication
+        self.canvas.fig.clear()
+        self.canvas.ax = self.canvas.fig.add_subplot(111)
         
         # Compute spectrogram
         D = self.compute_spectrogram(frame_length, hop_length, self.current_scale)
         
         if D is not None:
             # Display parameters
-            img = librosa.display.specshow(D, sr=self.sr, 
-                                        hop_length=hop_length,
-                                        x_axis='time', y_axis=self.current_scale,
-                                        cmap=self.current_cmap,
-                                        vmin=-db_range, vmax=0,
-                                        ax=self.canvas.ax)
+            img = librosa.display.specshow(
+                D, 
+                sr=self.sr, 
+                hop_length=hop_length,
+                x_axis='time', 
+                y_axis=self.current_scale,
+                cmap=self.current_cmap,
+                vmin=-db_range, 
+                vmax=0,
+                ax=self.canvas.ax
+            )
             
-            self.canvas.ax.set_title(f'Spectrogram: {os.path.basename(self.audio_path)}\n'
-                            f"FFT: {frame_length} | Hop: {hop_length} | Scale: {self.current_scale.upper()}")
+            self.canvas.ax.set_title(
+                f'Spectrogram: {os.path.basename(self.audio_path)}\n'
+                f"FFT: {frame_length} | Hop: {hop_length} | Scale: {self.current_scale.upper()}"
+            )
             
-            # Add colorbar
+            # Add colorbar (will be cleared with the figure on next update)
             self.canvas.fig.colorbar(img, ax=self.canvas.ax, format="%+2.0f dB")
             
             # Refresh canvas
