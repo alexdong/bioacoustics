@@ -169,7 +169,8 @@ def create_augmentation_pipeline(
                 AddColorNoise(
                     min_snr_db=5.0,
                     max_snr_db=30.0,
-                    color="pink",
+                    min_f_decay=-3.01,  # Pink noise has -3.01 dB/octave decay
+                    max_f_decay=-3.01,  # Keep it consistent for pink noise
                     p=1.0,
                 ),
             ],
