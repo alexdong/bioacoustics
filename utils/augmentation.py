@@ -64,8 +64,8 @@ import typing
 import numpy as np
 from audiomentations import (
     AddBackgroundNoise,
-    AddColorNoise,
-    AddGaussianSNR,
+    AddColoredNoise,  # Updated from AddColorNoise
+    AddGaussianNoise,  # Updated from AddGaussianSNR
     AirAbsorption,
     ApplyImpulseResponse,
     BandPassFilter,
@@ -167,12 +167,11 @@ def create_augmentation_pipeline(
                 AddBackgroundNoise(
                     sounds_path=esc50_dir, min_snr_in_db=3.0, max_snr_in_db=15.0, p=1.0,
                 ),
-                AddGaussianSNR(min_snr_in_db=5.0, max_snr_in_db=40.0, p=1.0),
-                AddColorNoise(
+                AddGaussianNoise(min_snr_in_db=5.0, max_snr_in_db=40.0, p=1.0),  # Updated from AddGaussianSNR
+                AddColoredNoise(
                     min_snr_in_db=5.0,
                     max_snr_in_db=30.0,
-                    min_color="pink",
-                    max_color="pink",
+                    color="pink",  # Updated from min_color/max_color to just color
                     p=1.0,
                 ),
             ],
