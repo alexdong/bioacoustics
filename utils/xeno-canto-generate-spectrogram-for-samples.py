@@ -7,7 +7,6 @@ import sys
 import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, List, Tuple, Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
