@@ -4,8 +4,9 @@ Trains an EfficientNet-B1 model for bioacoustic species classification.
 Refactored to use utility functions.
 """
 
+import sys
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import torch
 import wandb
@@ -47,6 +48,9 @@ from utils.training_utils import (
     train_one_epoch,
     validate,
 )
+
+# Define type alias
+Metric: TypeAlias = float  # Or MulticlassAUROC
 
 # --- Experiment Specific Configuration ---
 EXPERIMENT_NAME = "EfficientNet-B1_Baseline_Refactored"
@@ -421,10 +425,3 @@ if __name__ == "__main__":
         if wandb.run is not None:
             wandb.finish(exit_code=1)  # Mark run as failed
         sys.exit(1)  # Exit with error code
-from typing import TypeAlias
-
-# Define Metric type alias
-Metric: TypeAlias = float  # Or whatever the appropriate type is
-
-# Define SEGMENT_DURATION_S constant
-SEGMENT_DURATION_S: float = 5.0  # Or whatever the appropriate value is

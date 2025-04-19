@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Utilities related to model definition and handling."""
 
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Tuple
 
 import torch
 from torch import nn
@@ -86,4 +87,3 @@ def load_checkpoint(
     except Exception as e:
         log("ERROR", f"💥 Failed to load checkpoint from {filepath}: {e}")
         raise  # Re-raise error if loading fails critically
-from typing import Optional

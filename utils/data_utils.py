@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from .config import (
     AUDIO_BASE_DIR,
+    DATASET_BASE_DIR,
     HOP_LENGTH,
     N_MELS,
     SEGMENT_SAMPLES,
@@ -337,7 +338,3 @@ def get_dataloaders(
         )
 
     return dataloaders
-from pathlib import Path
-
-# Define dataset base directory
-DATASET_BASE_DIR = Path("datasets/xeno-canto-brazil-small")
