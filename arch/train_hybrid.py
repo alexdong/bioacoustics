@@ -33,6 +33,7 @@ from utils.config import (
     NUM_CLASSES,
     OUTPUT_BASE_DIR,
     PROJECT_NAME,
+    SEGMENT_DURATION_S,
     SEGMENT_SAMPLES,
     TARGET_SAMPLE_RATE,
     TEMP_BASE_DIR,
