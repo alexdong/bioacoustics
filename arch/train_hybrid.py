@@ -597,3 +597,11 @@ if __name__ == "__main__":
         if wandb.run is not None:
             wandb.finish(exit_code=1)
         sys.exit(1)
+import sys
+from typing import TypeAlias
+
+# Define Metric type alias
+Metric: TypeAlias = float  # Or whatever the appropriate type is
+
+# Define SEGMENT_DURATION_S constant
+SEGMENT_DURATION_S: float = 5.0  # Or whatever the appropriate value is

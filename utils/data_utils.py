@@ -337,3 +337,7 @@ def get_dataloaders(
         )
 
     return dataloaders
+from pathlib import Path
+
+# Define dataset base directory
+DATASET_BASE_DIR = Path("datasets/xeno-canto-brazil-small")
