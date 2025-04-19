@@ -86,5 +86,4 @@ def load_checkpoint(
     except Exception as e:
         log("ERROR", f"💥 Failed to load checkpoint from {filepath}: {e}")
         raise  # Re-raise error if loading fails critically
-from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional
