@@ -9,11 +9,12 @@ import torch
 # Type Alias
 Tensor = torch.Tensor
 
+
 # --- Top Level Function ---
 def mae_reconstruction_loss(
-    predictions: Tensor, # Shape: (B, N_FRAMES, N_MELS) - Output from Decoder
-    targets: Tensor,    # Shape: (B, N_MELS, N_FRAMES) - Original Mel Spec
-    mask: Tensor,       # Shape: (B, N_FRAMES) - Boolean mask (True=masked)
+    predictions: Tensor,  # Shape: (B, N_FRAMES, N_MELS) - Output from Decoder
+    targets: Tensor,  # Shape: (B, N_MELS, N_FRAMES) - Original Mel Spec
+    mask: Tensor,  # Shape: (B, N_FRAMES) - Boolean mask (True=masked)
 ) -> Tensor:
     """
     Computes the Mean Squared Error (MSE) loss only on the masked patches.
@@ -45,14 +46,16 @@ def mae_reconstruction_loss(
     n_frames_mask = mask.shape[1]
 
     if n_frames_pred != n_frames_mask:
-         print(f"[WARNING][LOSS] Frame mismatch! Pred: {n_frames_pred}, Mask: {n_frames_mask}. Truncating mask/target.")
-         min_frames = min(n_frames_pred, n_frames_mask)
-         predictions = predictions[:, :, :min_frames]
-         targets = targets[:, :, :min_frames]
-         mask = mask[:, :min_frames]
+        print(
+            f"[WARNING][LOSS] Frame mismatch! Pred: {n_frames_pred}, Mask: {n_frames_mask}. Truncating mask/target.",
+        )
+        min_frames = min(n_frames_pred, n_frames_mask)
+        predictions = predictions[:, :, :min_frames]
+        targets = targets[:, :, :min_frames]
+        mask = mask[:, :min_frames]
 
     # Expand mask to match the shape of targets/predictions (B, N_MELS, N_FRAMES)
-    mask_expanded = mask.unsqueeze(1).expand_as(targets) # (B, 1, T) -> (B, C, T)
+    mask_expanded = mask.unsqueeze(1).expand_as(targets)  # (B, 1, T) -> (B, C, T)
 
     # Calculate squared error only on masked patches
     squared_error = (predictions - targets) ** 2
@@ -61,10 +64,12 @@ def mae_reconstruction_loss(
 
     # Sum the squared error over the masked patches and normalize
     # Sum over channel and time dimensions, then mean over batch
-    loss_per_sample = torch.sum(masked_squared_error, dim=(1, 2)) # Sum over C, T -> Shape (B,)
+    loss_per_sample = torch.sum(
+        masked_squared_error, dim=(1, 2),
+    )  # Sum over C, T -> Shape (B,)
     # Normalize by the number of masked elements *in each sample* (mask sum * N_MELS)
     # Add epsilon to avoid division by zero if a sample somehow has no masked frames
-    num_masked_per_sample = torch.sum(mask, dim=1) * n_mels + 1e-7 # Shape (B,)
+    num_masked_per_sample = torch.sum(mask, dim=1) * n_mels + 1e-7  # Shape (B,)
     normalized_loss_per_sample = loss_per_sample / num_masked_per_sample
 
     # Mean loss across the batch
@@ -79,14 +84,14 @@ if __name__ == "__main__":
 
     # Dummy data
     batch_demo = 2
-    classes_demo = 8 # N_MELS
+    classes_demo = 8  # N_MELS
     frames_demo = 20
     # Decoder output shape (B, T, C)
     dummy_preds = torch.randn(batch_demo, frames_demo, classes_demo)
     # Target shape (B, C, T)
     dummy_targets = torch.randn(batch_demo, classes_demo, frames_demo)
     # Mask shape (B, T), boolean, True=masked
-    dummy_mask = torch.rand(batch_demo, frames_demo) > 0.3 # ~70% masked
+    dummy_mask = torch.rand(batch_demo, frames_demo) > 0.3  # ~70% masked
 
     try:
         print("[DEMO] Inputs:")
@@ -101,13 +106,15 @@ if __name__ == "__main__":
 
         # Test with frame mismatch
         print("\n[DEMO] Testing frame mismatch handling...")
-        dummy_preds_short = dummy_preds[:, :-1, :] # Shorter prediction
-        loss_mismatch = mae_reconstruction_loss(dummy_preds_short, dummy_targets, dummy_mask)
+        dummy_preds_short = dummy_preds[:, :-1, :]  # Shorter prediction
+        loss_mismatch = mae_reconstruction_loss(
+            dummy_preds_short, dummy_targets, dummy_mask,
+        )
         print(f"[DEMO] Calculated Loss (mismatch): {loss_mismatch.item()}")
-
 
     except Exception as e:
         import traceback
+
         print(f"[ERROR] Demonstration failed: {e}")
         traceback.print_exc()
 

@@ -14,25 +14,33 @@ DEFAULT_REQUEST_DELAY = 1.1  # Slightly more than 1 second to be safe
 
 # --- File Handling Functions ---
 
+
 def ensure_directory(directory_path: Union[str, Path]) -> Path:
     """Create directory if it doesn't exist and return Path object."""
     path = Path(directory_path)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
+
 def get_file_extension(url: str, default_ext: str = ".wav") -> str:
     """Extract file extension from URL, defaulting if not found."""
     try:
         file_extension = os.path.splitext(url)[1]
         if not file_extension or len(file_extension) > 5:
-            print(f"    Warning: Unusual file extension '{file_extension}' for URL {url}. Defaulting to {default_ext}")
+            print(
+                f"    Warning: Unusual file extension '{file_extension}' for URL {url}. Defaulting to {default_ext}",
+            )
             file_extension = default_ext
         return file_extension
     except Exception:
-        print(f"    Warning: Could not parse extension from URL {url}. Defaulting to {default_ext}")
+        print(
+            f"    Warning: Could not parse extension from URL {url}. Defaulting to {default_ext}",
+        )
         return default_ext
 
+
 # --- Request Handling ---
+
 
 def create_session(headers: Optional[Dict[str, str]] = None) -> requests.Session:
     """Create and configure a requests session with appropriate headers."""
@@ -40,6 +48,7 @@ def create_session(headers: Optional[Dict[str, str]] = None) -> requests.Session
     if headers:
         session.headers.update(headers)
     return session
+
 
 def download_file(
     url: str,
@@ -50,7 +59,7 @@ def download_file(
     log_func: Callable[[str], None] = print,
 ) -> bool:
     """Downloads a file from URL to the specified path.
-    
+
     Args:
         url: The URL to download from
         output_path: Path where the file should be saved
@@ -58,22 +67,22 @@ def download_file(
         timeout: Request timeout in seconds
         chunk_size: Size of chunks to download
         log_func: Function to use for logging (e.g., print or tqdm.write)
-        
+
     Returns:
         bool: True if download was successful, False otherwise
     """
     try:
         # Use provided session or create a new one
         req = session.get if session else requests.get
-        
+
         with req(url, stream=True, timeout=timeout) as r:
             r.raise_for_status()
-            with open(output_path, 'wb') as f:
+            with open(output_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     f.write(chunk)
-        
+
         return True
-    
+
     except requests.exceptions.RequestException as e:
         log_func(f"Error downloading {url}: {e}")
         # Clean up potentially incomplete file
@@ -83,7 +92,7 @@ def download_file(
             except OSError:
                 pass
         return False
-    
+
     except Exception as e:
         log_func(f"Unexpected error during download of {url}: {e}")
         if os.path.exists(output_path):
@@ -93,17 +102,20 @@ def download_file(
                 pass
         return False
 
+
 def save_json(data: Dict[str, Any], output_path: Union[str, Path]) -> bool:
     """Save data as JSON to the specified path."""
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         return True
     except Exception as e:
         print(f"Error saving JSON to {output_path}: {e}")
         return False
 
+
 # --- Progress Tracking ---
+
 
 def create_progress_bar(
     total: int,
@@ -119,7 +131,9 @@ def create_progress_bar(
         ncols=ncols,
     )
 
+
 # --- S3 Utilities ---
+
 
 def check_s3_file_exists(
     s3_client: S3Client,
@@ -132,6 +146,7 @@ def check_s3_file_exists(
         return True
     except Exception:
         return False
+
 
 def upload_to_s3(
     s3_client: S3Client,
@@ -148,14 +163,14 @@ def upload_to_s3(
     try:
         extra_args = {}
         if content_type:
-            extra_args['ContentType'] = content_type
+            extra_args["ContentType"] = content_type
 
         # Handle both bytes and file-like objects
         if isinstance(data, bytes):
             s3_client.put_object(Bucket=bucket, Key=s3_key, Body=data, **extra_args)
         else:
             s3_client.upload_fileobj(data, bucket, s3_key, ExtraArgs=extra_args)
-            
+
         if not quiet:
             log_func(f"Successfully uploaded to s3://{bucket}/{s3_key}")
         return True

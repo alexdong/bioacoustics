@@ -6,7 +6,9 @@ import torch
 
 # --- Paths ---
 # Define paths with consistent structure
-PROJECT_ROOT: Path = Path(__file__).parent.parent.resolve()  # Get project root directory
+PROJECT_ROOT: Path = Path(
+    __file__,
+).parent.parent.resolve()  # Get project root directory
 DATA_DIR: Path = PROJECT_ROOT / "data"  # Data directory in project root
 
 # Audio and metadata paths
@@ -24,35 +26,39 @@ ENCODER_CHECKPOINT_PATH: Path | None = SSL_DIR / "output_ssl" / "ssl_encoder_fin
 OUTPUT_DIR: Path = PROJECT_ROOT / "output" / "fine-tune"
 CHECKPOINT_DIR: Path = OUTPUT_DIR / "checkpoints"
 LOG_DIR: Path = OUTPUT_DIR / "logs"
-TEMP_DIR: Path = Path("/tmp/birdclef_finetune")  # For intermediate files (not cleaned up)
+TEMP_DIR: Path = Path(
+    "/tmp/birdclef_finetune",
+)  # For intermediate files (not cleaned up)
 
 # --- Audio Processing ---
-TARGET_SAMPLE_RATE: int = 32000 # Whisper models often use 16kHz or 32kHz, check your base
-CHUNK_DURATION_SEC: float = 5.0 # As per competition requirement
-N_MELS: int = 128 # Typical for Whisper-like models, adjust if needed
-HOP_LENGTH: int = 160 # Corresponds roughly to 10ms frame shift at 16kHz, adjust for SR
+TARGET_SAMPLE_RATE: int = (
+    32000  # Whisper models often use 16kHz or 32kHz, check your base
+)
+CHUNK_DURATION_SEC: float = 5.0  # As per competition requirement
+N_MELS: int = 128  # Typical for Whisper-like models, adjust if needed
+HOP_LENGTH: int = 160  # Corresponds roughly to 10ms frame shift at 16kHz, adjust for SR
 
 # --- Model ---
 # NOTE: Specify the base Whisper model size used for your encoder
 # Options: "tiny", "base", "small", "medium", "large-v1", "large-v2", "large-v3"
-WHISPER_MODEL_SIZE: str = "large-v3" # TODO: Update if different!
-NUM_CLASSES: int = 182 # TODO: Update with actual number of species in Xeno-Canto data
-POOLING_TYPE: str = "mean" # Options: "mean", "max"
+WHISPER_MODEL_SIZE: str = "large-v3"  # TODO: Update if different!
+NUM_CLASSES: int = 182  # TODO: Update with actual number of species in Xeno-Canto data
+POOLING_TYPE: str = "mean"  # Options: "mean", "max"
 
 # --- Training ---
 DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE: int = 32 # Adjust based on GPU memory
-NUM_WORKERS: int = 4 # For DataLoader
-LEARNING_RATE_ENCODER: float = 1e-5 # Lower LR for pre-trained part
-LEARNING_RATE_HEAD: float = 1e-4 # Higher LR for new classifier head
+BATCH_SIZE: int = 32  # Adjust based on GPU memory
+NUM_WORKERS: int = 4  # For DataLoader
+LEARNING_RATE_ENCODER: float = 1e-5  # Lower LR for pre-trained part
+LEARNING_RATE_HEAD: float = 1e-4  # Higher LR for new classifier head
 WEIGHT_DECAY: float = 0.01
-NUM_EPOCHS: int = 10 # Adjust as needed
-ACCUMULATE_GRAD_BATCHES: int = 1 # Increase if BATCH_SIZE is too small for memory
-VALIDATION_INTERVAL_STEPS: int = 500 # How often to run validation within an epoch
+NUM_EPOCHS: int = 10  # Adjust as needed
+ACCUMULATE_GRAD_BATCHES: int = 1  # Increase if BATCH_SIZE is too small for memory
+VALIDATION_INTERVAL_STEPS: int = 500  # How often to run validation within an epoch
 
 # --- Loss Function ---
 # Weighting factor for the hierarchical distance penalty
-HIERARCHICAL_LOSS_ALPHA: float = 0.25 # Tune this based on validation
+HIERARCHICAL_LOSS_ALPHA: float = 0.25  # Tune this based on validation
 
 # --- Miscellaneous ---
 RANDOM_SEED: int = 42

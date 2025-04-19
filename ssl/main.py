@@ -24,6 +24,7 @@ def set_seed(seed: int) -> None:
         # torch.backends.cudnn.deterministic = True
         # torch.backends.cudnn.benchmark = False
 
+
 # --- Main Execution ---
 print("--- Starting SSL Pre-training Script ---")
 set_seed(ssl_config.RANDOM_SEED)
@@ -53,8 +54,12 @@ optimizer = optim.AdamW(
 )
 
 # Example scheduler: Cosine annealing over total training steps
-num_training_steps = (len(ssl_loader) // ssl_config.ACCUMULATE_GRAD_BATCHES) * ssl_config.NUM_EPOCHS
-scheduler = CosineAnnealingLR(optimizer, T_max=num_training_steps, eta_min=1e-6) # Decay to near zero
+num_training_steps = (
+    len(ssl_loader) // ssl_config.ACCUMULATE_GRAD_BATCHES
+) * ssl_config.NUM_EPOCHS
+scheduler = CosineAnnealingLR(
+    optimizer, T_max=num_training_steps, eta_min=1e-6,
+)  # Decay to near zero
 print(f"[SSL MAIN] Using CosineAnnealingLR scheduler over {num_training_steps} steps.")
 
 # 4. Run SSL Training
@@ -74,12 +79,17 @@ try:
 except Exception as e:
     print(f"\n[ERROR] SSL Training loop failed: {e}")
     import traceback
+
     traceback.print_exc()
     print("[SSL MAIN] Training aborted due to error.")
 else:
     print("\n[SSL MAIN] SSL Training completed successfully.")
-    assert ssl_config.SSL_ENCODER_CHECKPOINT_PATH.exists(), "Final SSL encoder checkpoint not found!"
-    print(f"[SSL MAIN] Final encoder checkpoint saved to: {ssl_config.SSL_ENCODER_CHECKPOINT_PATH}")
+    assert (
+        ssl_config.SSL_ENCODER_CHECKPOINT_PATH.exists()
+    ), "Final SSL encoder checkpoint not found!"
+    print(
+        f"[SSL MAIN] Final encoder checkpoint saved to: {ssl_config.SSL_ENCODER_CHECKPOINT_PATH}",
+    )
 
 print("\n--- SSL Pre-training Script Finished ---")
 print("Jeeves seems pleased with the self-supervised endeavour. Onwards!")

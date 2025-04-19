@@ -2,6 +2,7 @@
 """Shared configuration constants."""
 
 from pathlib import Path
+
 import torch
 
 # Project Wide

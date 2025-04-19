@@ -22,6 +22,7 @@ from torch.utils.data import DataLoader, Dataset
 Tensor = torch.Tensor
 Device = torch.device
 
+
 # --- Top Level Function ---
 def train_model(
     model: nn.Module,
@@ -29,7 +30,12 @@ def train_model(
     val_loader: DataLoader | None,
     distance_matrix_np: NumpyDistanceMatrix,
     optimizer: optim.Optimizer,
-    scheduler: Optional[Union[torch.optim.lr_scheduler._LRScheduler, torch.optim.lr_scheduler.ReduceLROnPlateau]], # Scheduler type can vary
+    scheduler: Optional[
+        Union[
+            torch.optim.lr_scheduler._LRScheduler,
+            torch.optim.lr_scheduler.ReduceLROnPlateau,
+        ]
+    ],  # Scheduler type can vary
     num_epochs: int,
     device: Device,
     checkpoint_dir: Path,
@@ -43,15 +49,15 @@ def train_model(
     distance_matrix = torch.from_numpy(distance_matrix_np).float().to(device)
 
     global_step = 0
-    best_val_loss = float('inf')
+    best_val_loss = float("inf")
 
     for epoch in range(num_epochs):
         epoch_start_time = time.time()
         print(f"\n--- Epoch {epoch+1}/{num_epochs} ---")
 
-        model.train() # Set model to training mode
+        model.train()  # Set model to training mode
         train_loss_accum = 0.0
-        optimizer.zero_grad() # Zero gradients at the start of epoch/accumulation cycle
+        optimizer.zero_grad()  # Zero gradients at the start of epoch/accumulation cycle
 
         for step, batch in enumerate(train_loader):
             step_start_time = time.time()
@@ -66,35 +72,50 @@ def train_model(
 
             # Calculate loss
             loss = hierarchical_distance_loss(logits, labels, distance_matrix)
-            loss = loss / accumulate_grad_batches # Scale loss for gradient accumulation
+            loss = (
+                loss / accumulate_grad_batches
+            )  # Scale loss for gradient accumulation
 
             # Backward pass
             loss.backward()
 
-            train_loss_accum += loss.item() * accumulate_grad_batches # Unscale for logging
+            train_loss_accum += (
+                loss.item() * accumulate_grad_batches
+            )  # Unscale for logging
 
             # Optimizer step (perform after accumulating gradients)
             if (step + 1) % accumulate_grad_batches == 0:
                 optimizer.step()
-                optimizer.zero_grad() # Zero gradients after step
+                optimizer.zero_grad()  # Zero gradients after step
                 global_step += 1
                 step_end_time = time.time()
 
                 # Logging (print statement as per convention)
-                lr_encoder = optimizer.param_groups[0]['lr'] # Assuming first group is encoder
-                lr_head = optimizer.param_groups[1]['lr'] # Assuming second group is head
-                print(f"[TRAIN] Epoch {epoch+1}, Step {global_step}, Loss: {loss.item() * accumulate_grad_batches:.4f}, LR Enc: {lr_encoder:.1e}, LR Head: {lr_head:.1e}, Time/Step: {step_end_time - step_start_time:.2f}s")
-
+                lr_encoder = optimizer.param_groups[0][
+                    "lr"
+                ]  # Assuming first group is encoder
+                lr_head = optimizer.param_groups[1][
+                    "lr"
+                ]  # Assuming second group is head
+                print(
+                    f"[TRAIN] Epoch {epoch+1}, Step {global_step}, Loss: {loss.item() * accumulate_grad_batches:.4f}, LR Enc: {lr_encoder:.1e}, LR Head: {lr_head:.1e}, Time/Step: {step_end_time - step_start_time:.2f}s",
+                )
 
                 # --- Validation Step ---
                 if val_loader is not None and global_step % validation_interval == 0:
                     val_start_time = time.time()
-                    val_loss = _validate_epoch(model, val_loader, distance_matrix, device)
+                    val_loss = _validate_epoch(
+                        model, val_loader, distance_matrix, device,
+                    )
                     val_end_time = time.time()
-                    print(f"[VAL] Step {global_step}, Validation Loss: {val_loss:.4f}, Time: {val_end_time - val_start_time:.2f}s")
+                    print(
+                        f"[VAL] Step {global_step}, Validation Loss: {val_loss:.4f}, Time: {val_end_time - val_start_time:.2f}s",
+                    )
 
                     # Scheduler step (example: based on validation loss)
-                    if scheduler is not None and isinstance(scheduler, ReduceLROnPlateau):
+                    if scheduler is not None and isinstance(
+                        scheduler, ReduceLROnPlateau,
+                    ):
                         scheduler.step(val_loss)
 
                     # Save checkpoint if validation loss improved
@@ -102,8 +123,9 @@ def train_model(
                         best_val_loss = val_loss
                         save_path = checkpoint_dir / f"best_model_step_{global_step}.pt"
                         torch.save(model.state_dict(), save_path)
-                        print(f"[CHECKPOINT] ✨ Best validation loss improved! Saved model to {save_path} ✨")
-
+                        print(
+                            f"[CHECKPOINT] ✨ Best validation loss improved! Saved model to {save_path} ✨",
+                        )
 
         # --- End of Epoch ---
         avg_train_loss = train_loss_accum / len(train_loader)
@@ -117,7 +139,6 @@ def train_model(
         # torch.save(model.state_dict(), epoch_save_path)
         # print(f"[CHECKPOINT] Saved epoch model to {epoch_save_path}")
 
-
     print("\n[TRAIN] 🎉 Training finished! Jeeves, fetch the celebratory crumpets! 🎉")
 
 
@@ -125,13 +146,13 @@ def train_model(
 def _validate_epoch(
     model: nn.Module,
     val_loader: DataLoader,
-    distance_matrix: Tensor, # Expecting tensor here
+    distance_matrix: Tensor,  # Expecting tensor here
     device: Device,
 ) -> float:
     """Runs a validation epoch and returns the average loss."""
-    model.eval() # Set model to evaluation mode
+    model.eval()  # Set model to evaluation mode
     total_val_loss = 0.0
-    with torch.no_grad(): # Disable gradient calculations
+    with torch.no_grad():  # Disable gradient calculations
         for batch in val_loader:
             mel_specs, labels = batch
             mel_specs = mel_specs.to(device)
@@ -147,25 +168,34 @@ def _validate_epoch(
 # --- Main Block for Testing/Demonstration ---
 if __name__ == "__main__":
     print("--- Running trainer.py demonstration ---")
-    print("[DEMO] NOTE: This demo uses dummy data and won't produce meaningful results.")
+    print(
+        "[DEMO] NOTE: This demo uses dummy data and won't produce meaningful results.",
+    )
 
     # Create dummy components
     class DummyEncoder(nn.Module):
         def __init__(self, feature_size: int = 128) -> None:
             super().__init__()
             self.feature_size = feature_size
-            self.config = type('obj', (object,), {'d_model': feature_size})() # Mock config
-            self.dummy_layer = nn.Linear(config.N_MELS * 10, self.feature_size) # Rough size match
+            self.config = type(
+                "obj", (object,), {"d_model": feature_size},
+            )()  # Mock config
+            self.dummy_layer = nn.Linear(
+                config.N_MELS * 10, self.feature_size,
+            )  # Rough size match
 
         def forward(self, input_features: Tensor) -> object:
-             # Flatten N_MELS and some time dim for Linear input
-             bs, n_mels, n_frames = input_features.shape
-             # Need a fixed size input for linear, this is tricky without real encoder
-             # Let's just return random tensor of expected shape
-             # Assume sequence length becomes 50 after encoder processing
-             seq_len_out = 50
-             return type('obj', (object,), {'last_hidden_state': torch.randn(bs, seq_len_out, self.feature_size)})()
-
+            # Flatten N_MELS and some time dim for Linear input
+            bs, n_mels, n_frames = input_features.shape
+            # Need a fixed size input for linear, this is tricky without real encoder
+            # Let's just return random tensor of expected shape
+            # Assume sequence length becomes 50 after encoder processing
+            seq_len_out = 50
+            return type(
+                "obj",
+                (object,),
+                {"last_hidden_state": torch.randn(bs, seq_len_out, self.feature_size)},
+            )()
 
     class DummyDataset(Dataset):
         def __init__(self, length: int = 20) -> None:
@@ -176,32 +206,45 @@ if __name__ == "__main__":
 
         def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
             # Rough estimate of frame count for 5s at 32kHz, hop 160, n_fft 1024 -> ~1000 frames
-            frame_count = 1000 # Matches competition 5s window inference more closely
+            frame_count = 1000  # Matches competition 5s window inference more closely
             mel = torch.randn(config.N_MELS, frame_count)
             # Target needs NUM_CLASSES = 4 for dummy distance matrix
             target = torch.randint(0, 2, (4,)).float()
             return mel, target
 
     dummy_encoder = DummyEncoder()
-    dummy_model = model.BirdClefClassifier(dummy_encoder, 128, 4) # 4 classes for dummy dist matrix
-    dummy_train_dataset = DummyDataset(length=40 * config.ACCUMULATE_GRAD_BATCHES) # Ensure enough steps
+    dummy_model = model.BirdClefClassifier(
+        dummy_encoder, 128, 4,
+    )  # 4 classes for dummy dist matrix
+    dummy_train_dataset = DummyDataset(
+        length=40 * config.ACCUMULATE_GRAD_BATCHES,
+    )  # Ensure enough steps
     dummy_val_dataset = DummyDataset(length=10)
     dummy_train_loader = DataLoader(dummy_train_dataset, batch_size=config.BATCH_SIZE)
     dummy_val_loader = DataLoader(dummy_val_dataset, batch_size=config.BATCH_SIZE)
-    dummy_dist_matrix_np = np.array([ # 4x4
-        [0, 2, 6, 8], [2, 0, 2, 6], [6, 2, 0, 2], [8, 6, 2, 0],
-    ], dtype=np.float32)
+    dummy_dist_matrix_np = np.array(
+        [  # 4x4
+            [0, 2, 6, 8],
+            [2, 0, 2, 6],
+            [6, 2, 0, 2],
+            [8, 6, 2, 0],
+        ],
+        dtype=np.float32,
+    )
 
     # Separate params for differential learning rate
     encoder_params = dummy_model.encoder.parameters()
     head_params = dummy_model.classifier_head.parameters()
-    dummy_optimizer = optim.AdamW([
-        {'params': encoder_params, 'lr': config.LEARNING_RATE_ENCODER},
-        {'params': head_params, 'lr': config.LEARNING_RATE_HEAD},
-    ], weight_decay=config.WEIGHT_DECAY)
+    dummy_optimizer = optim.AdamW(
+        [
+            {"params": encoder_params, "lr": config.LEARNING_RATE_ENCODER},
+            {"params": head_params, "lr": config.LEARNING_RATE_HEAD},
+        ],
+        weight_decay=config.WEIGHT_DECAY,
+    )
 
-    dummy_scheduler = ReduceLROnPlateau(dummy_optimizer, 'min', patience=2, factor=0.5)
-    dummy_device = torch.device("cpu") # Force CPU for demo
+    dummy_scheduler = ReduceLROnPlateau(dummy_optimizer, "min", patience=2, factor=0.5)
+    dummy_device = torch.device("cpu")  # Force CPU for demo
 
     try:
         print("[DEMO] Starting dummy training loop...")
@@ -212,16 +255,17 @@ if __name__ == "__main__":
             distance_matrix_np=dummy_dist_matrix_np,
             optimizer=dummy_optimizer,
             scheduler=dummy_scheduler,
-            num_epochs=1, # Just one epoch for demo
+            num_epochs=1,  # Just one epoch for demo
             device=dummy_device,
             checkpoint_dir=config.CHECKPOINT_DIR,
-            validation_interval=1, # Validate every step
+            validation_interval=1,  # Validate every step
             accumulate_grad_batches=config.ACCUMULATE_GRAD_BATCHES,
         )
         print("\n[DEMO] Dummy training loop completed.")
 
     except Exception as e:
         import traceback
+
         print(f"[ERROR] Demonstration failed: {e}")
         traceback.print_exc()
 

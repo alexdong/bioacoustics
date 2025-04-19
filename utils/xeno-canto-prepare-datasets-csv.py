@@ -3,7 +3,7 @@ import json
 import logging
 import pathlib
 from collections import defaultdict
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from sklearn.model_selection import train_test_split

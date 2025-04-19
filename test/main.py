@@ -20,6 +20,7 @@ except ImportError:
 # Type Alias
 Device = torch.device
 
+
 # --- Top Level Function ---
 def run_inference(
     model_format: str,
@@ -61,9 +62,9 @@ def run_inference(
 
     # 3. Run Prediction in Batches
     all_probabilities_list: List[np.ndarray] = []
-    processed_row_ids: List[str] = [] # Store row_ids in order of processing
+    processed_row_ids: List[str] = []  # Store row_ids in order of processing
 
-    model.eval() # Ensure model is in eval mode
+    model.eval()  # Ensure model is in eval mode
     print(f"[INFERENCE] Processing {len(row_ids)} test chunks in batches...")
     with torch.no_grad():
         for batch_data, batch_row_ids in test_loader:
@@ -81,13 +82,15 @@ def run_inference(
             # Apply sigmoid to get probabilities
             probabilities = torch.sigmoid(logits)
             all_probabilities_list.append(probabilities.cpu().numpy())
-            processed_row_ids.extend(batch_row_ids) # Store row_ids as they come
+            processed_row_ids.extend(batch_row_ids)  # Store row_ids as they come
 
     print("[INFERENCE] Prediction loop finished.")
 
     # Assert that the number of processed row_ids matches the dataloader size *if* metadata was used
     if test_metadata_path:
-        assert len(processed_row_ids) == len(row_ids), "Mismatch in processed row IDs count"
+        assert len(processed_row_ids) == len(
+            row_ids,
+        ), "Mismatch in processed row IDs count"
         # Reorder results based on original row_ids from metadata if needed
         # This might be necessary if DataLoader order isn't guaranteed (though shuffle=False helps)
         # For simplicity, assuming DataLoader preserves order when shuffle=False
@@ -95,8 +98,9 @@ def run_inference(
     # Concatenate all predictions
     assert len(all_probabilities_list) > 0, "No predictions were generated."
     all_probabilities = np.concatenate(all_probabilities_list, axis=0)
-    print(f"[INFERENCE] Final predictions array shape: {all_probabilities.shape}") # (num_samples, num_classes)
-
+    print(
+        f"[INFERENCE] Final predictions array shape: {all_probabilities.shape}",
+    )  # (num_samples, num_classes)
 
     # 4. Format Submission File
     print("[INFERENCE] Formatting submission file...")
@@ -105,38 +109,50 @@ def run_inference(
     try:
         # Attempt to get from fine_tune config metadata read
         # This relies on the import structure and might fail.
-        ft_meta = pd.read_csv(test_config.FINE_TUNE_DIR / "config.py::TRAIN_METADATA_PATH") # Hacky way
-        species_list = sorted(list(ft_meta['primary_label'].unique()))
+        ft_meta = pd.read_csv(
+            test_config.FINE_TUNE_DIR / "config.py::TRAIN_METADATA_PATH",
+        )  # Hacky way
+        species_list = sorted(list(ft_meta["primary_label"].unique()))
     except Exception:
         # Fallback: Try loading from sample submission columns if metadata was used
-        print("[WARNING] Could not reliably load species list from fine_tune config. Trying sample submission...")
+        print(
+            "[WARNING] Could not reliably load species list from fine_tune config. Trying sample submission...",
+        )
         if test_metadata_path and test_config.TEST_METADATA_PATH:
             sample_df = pd.read_csv(test_config.TEST_METADATA_PATH)
             # Assume species columns are all columns except 'row_id'
-            species_list = [col for col in sample_df.columns if col != 'row_id']
-            print(f"[INFERENCE] Using {len(species_list)} species from sample submission columns.")
+            species_list = [col for col in sample_df.columns if col != "row_id"]
+            print(
+                f"[INFERENCE] Using {len(species_list)} species from sample submission columns.",
+            )
         else:
-             raise ValueError("Cannot determine species list for submission header!")
+            raise ValueError("Cannot determine species list for submission header!")
 
-    assert all_probabilities.shape[1] == len(species_list), \
-        f"Prediction dimension ({all_probabilities.shape[1]}) doesn't match species list ({len(species_list)})"
+    assert all_probabilities.shape[1] == len(
+        species_list,
+    ), f"Prediction dimension ({all_probabilities.shape[1]}) doesn't match species list ({len(species_list)})"
 
     # Create DataFrame
-    submission_df = pd.DataFrame({
-        'row_id': processed_row_ids, # Use the row_ids processed by the loader
-    })
+    submission_df = pd.DataFrame(
+        {
+            "row_id": processed_row_ids,  # Use the row_ids processed by the loader
+        },
+    )
     prob_df = pd.DataFrame(all_probabilities, columns=species_list)
     submission_df = pd.concat([submission_df, prob_df], axis=1)
 
     # Reorder according to original row_ids from metadata if necessary and available
     if test_metadata_path and test_config.TEST_METADATA_PATH:
         sample_df = pd.read_csv(test_config.TEST_METADATA_PATH)
-        original_order_df = pd.DataFrame({'row_id': sample_df['row_id']})
+        original_order_df = pd.DataFrame({"row_id": sample_df["row_id"]})
         # Ensure all processed IDs are in the original list (and vice versa if strict)
-        assert set(processed_row_ids) == set(original_order_df['row_id']), "Mismatch between processed and expected row IDs"
-        submission_df = pd.merge(original_order_df, submission_df, on='row_id', how='left')
+        assert set(processed_row_ids) == set(
+            original_order_df["row_id"],
+        ), "Mismatch between processed and expected row IDs"
+        submission_df = pd.merge(
+            original_order_df, submission_df, on="row_id", how="left",
+        )
         print("[INFERENCE] Reordered submission based on sample_submission.csv")
-
 
     # Save submission file
     submission_df.to_csv(submission_path, index=False)
@@ -146,46 +162,91 @@ def run_inference(
 # --- Argument Parsing and Main Execution ---
 if __name__ == "__main__":
     print("--- Running Inference Script ---")
-    parser = argparse.ArgumentParser(description="Run inference for BirdCLEF competition.")
+    parser = argparse.ArgumentParser(
+        description="Run inference for BirdCLEF competition.",
+    )
     parser.add_argument(
-        "--checkpoint", type=str, required=False, default=str(test_config.MODEL_CHECKPOINT_PATH),
+        "--checkpoint",
+        type=str,
+        required=False,
+        default=str(test_config.MODEL_CHECKPOINT_PATH),
         help="Path to the fine-tuned model checkpoint (.pt).",
     )
     parser.add_argument(
-        "--test_audio_dir", type=str, required=False, default=str(test_config.TEST_AUDIO_DIR),
+        "--test_audio_dir",
+        type=str,
+        required=False,
+        default=str(test_config.TEST_AUDIO_DIR),
         help="Path to the directory containing test audio files.",
     )
     parser.add_argument(
-        "--test_metadata", type=str, required=False, default=str(test_config.TEST_METADATA_PATH) if test_config.TEST_METADATA_PATH else None,
+        "--test_metadata",
+        type=str,
+        required=False,
+        default=(
+            str(test_config.TEST_METADATA_PATH)
+            if test_config.TEST_METADATA_PATH
+            else None
+        ),
         help="Path to the test metadata file (e.g., sample_submission.csv). If None, glob test_audio_dir.",
     )
     parser.add_argument(
-        "--submission_file", type=str, required=False, default=str(test_config.SUBMISSION_OUTPUT_PATH),
+        "--submission_file",
+        type=str,
+        required=False,
+        default=str(test_config.SUBMISSION_OUTPUT_PATH),
         help="Path to save the output submission CSV file.",
     )
     parser.add_argument(
-        "--batch_size", type=int, required=False, default=test_config.INFERENCE_BATCH_SIZE,
+        "--batch_size",
+        type=int,
+        required=False,
+        default=test_config.INFERENCE_BATCH_SIZE,
         help="Batch size for inference.",
     )
     parser.add_argument(
-        "--num_workers", type=int, required=False, default=test_config.NUM_WORKERS,
+        "--num_workers",
+        type=int,
+        required=False,
+        default=test_config.NUM_WORKERS,
         help="Number of workers for DataLoader.",
     )
     parser.add_argument(
-        "--device", type=str, required=False, default=test_config.DEVICE, choices=['cuda', 'cpu'],
+        "--device",
+        type=str,
+        required=False,
+        default=test_config.DEVICE,
+        choices=["cuda", "cpu"],
         help="Device to run inference on ('cuda' or 'cpu').",
     )
     parser.add_argument(
-        "--model_format", type=str, required=False, default=test_config.DEFAULT_MODEL_FORMAT,
-        choices=['pytorch', 'int8', 'torchscript'],
+        "--model_format",
+        type=str,
+        required=False,
+        default=test_config.DEFAULT_MODEL_FORMAT,
+        choices=["pytorch", "int8", "torchscript"],
         help="Format of the model to load.",
     )
     parser.add_argument(
-        "--quantized_path", type=str, required=False, default=str(test_config.QUANTIZED_MODEL_PATH) if test_config.QUANTIZED_MODEL_PATH else None,
+        "--quantized_path",
+        type=str,
+        required=False,
+        default=(
+            str(test_config.QUANTIZED_MODEL_PATH)
+            if test_config.QUANTIZED_MODEL_PATH
+            else None
+        ),
         help="Path to the quantized model (needed for format 'int8', specific usage depends on quantization type).",
     )
     parser.add_argument(
-        "--torchscript_path", type=str, required=False, default=str(test_config.TORCHSCRIPT_MODEL_PATH) if test_config.TORCHSCRIPT_MODEL_PATH else None,
+        "--torchscript_path",
+        type=str,
+        required=False,
+        default=(
+            str(test_config.TORCHSCRIPT_MODEL_PATH)
+            if test_config.TORCHSCRIPT_MODEL_PATH
+            else None
+        ),
         help="Path to the TorchScript model (needed for format 'torchscript').",
     )
 
@@ -202,20 +263,29 @@ if __name__ == "__main__":
 
     # Basic validation of paths
     assert checkpoint_p.is_file(), f"Checkpoint file not found: {checkpoint_p}"
-    assert test_audio_dir_p.is_dir(), f"Test audio directory not found: {test_audio_dir_p}"
+    assert (
+        test_audio_dir_p.is_dir()
+    ), f"Test audio directory not found: {test_audio_dir_p}"
     if test_metadata_p:
-        assert test_metadata_p.is_file(), f"Test metadata file not found: {test_metadata_p}"
-    if args.model_format == 'int8' and quantized_model_p is None:
+        assert (
+            test_metadata_p.is_file()
+        ), f"Test metadata file not found: {test_metadata_p}"
+    if args.model_format == "int8" and quantized_model_p is None:
         # Note: Dynamic quantization uses the FP32 checkpoint, so this check might
         # be removed if only dynamic quantization is supported via model_loader.
         # But keeping it for clarity if static quantization is ever used.
-        print("[WARNING] --model_format 'int8' selected but --quantized_path not provided. Dynamic quantization will use the main --checkpoint path.")
+        print(
+            "[WARNING] --model_format 'int8' selected but --quantized_path not provided. Dynamic quantization will use the main --checkpoint path.",
+        )
         # assert quantized_model_p is not None, "--quantized_path is required for --model_format 'int8'"
         # assert quantized_model_p.is_file(), f"Quantized model file not found: {quantized_model_p}"
-    if args.model_format == 'torchscript':
-        assert torchscript_model_p is not None, "--torchscript_path is required for --model_format 'torchscript'"
-        assert torchscript_model_p.is_file(), f"TorchScript model file not found: {torchscript_model_p}"
-
+    if args.model_format == "torchscript":
+        assert (
+            torchscript_model_p is not None
+        ), "--torchscript_path is required for --model_format 'torchscript'"
+        assert (
+            torchscript_model_p.is_file()
+        ), f"TorchScript model file not found: {torchscript_model_p}"
 
     # Run the main inference function
     try:
@@ -234,6 +304,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n[ERROR] Inference script failed: {e}")
         import traceback
+
         traceback.print_exc()
         print("[INFERENCE] Script aborted.")
 

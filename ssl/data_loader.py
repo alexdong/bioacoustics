@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 # Type Aliases
 AudioTensor = torch.Tensor
 
+
 # --- Top Level Function ---
 def create_ssl_dataloader(
     audio_dir: Path,
@@ -32,7 +33,7 @@ def create_ssl_dataloader(
     # NOTE: This could be memory intensive if the directory is huge.
     # Consider using `Path.rglob` for recursive search.
     # Limit number of files for testing if needed.
-    all_audio_files = list(audio_dir.glob("*.ogg")) # TODO: Adapt extension if needed
+    all_audio_files = list(audio_dir.glob("*.ogg"))  # TODO: Adapt extension if needed
     print(f"[SSL DATA] Found {len(all_audio_files)} audio files for SSL.")
     assert len(all_audio_files) > 0, f"No audio files found in {audio_dir}"
 
@@ -44,16 +45,18 @@ def create_ssl_dataloader(
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
-        drop_last=True, # Important for consistent batch sizes
-        collate_fn=_ssl_collate_fn, # Custom collate to handle masking if needed here
+        drop_last=True,  # Important for consistent batch sizes
+        collate_fn=_ssl_collate_fn,  # Custom collate to handle masking if needed here
     )
 
     print("[SSL DATA] SSL DataLoader created successfully.")
     return ssl_loader
 
+
 # --- Masking Function ---
 def _random_masking(
-    features: Tensor, mask_ratio: float = 0.75,
+    features: Tensor,
+    mask_ratio: float = 0.75,
 ) -> tuple[Tensor, Tensor, Tensor]:
     """
     Performs random masking on the time dimension of a spectrogram.
@@ -81,9 +84,15 @@ def _random_masking(
 
     # Create masked features (simple zero-masking)
     masked_features = features.clone()
-    masked_features[:, mask] = 0.0 # Zero out the masked time frames across all mel bins
+    masked_features[:, mask] = (
+        0.0  # Zero out the masked time frames across all mel bins
+    )
 
-    return masked_features, features, mask # Return masked, original, and the mask itself
+    return (
+        masked_features,
+        features,
+        mask,
+    )  # Return masked, original, and the mask itself
 
 
 # --- Dataset Class ---
@@ -103,13 +112,15 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
         # Initialize Mel Spectrogram transform
         self.mel_spectrogram = torchaudio.transforms.MelSpectrogram(
             sample_rate=self.target_sr,
-            n_fft=1024, # Example, match fine-tuning?
+            n_fft=1024,  # Example, match fine-tuning?
             win_length=None,
             hop_length=ssl_config.HOP_LENGTH,
             n_mels=ssl_config.N_MELS,
             power=2.0,
         )
-        print(f"[SSL DATASET] Initialized SSL Dataset with {len(self.audio_files)} files.")
+        print(
+            f"[SSL DATASET] Initialized SSL Dataset with {len(self.audio_files)} files.",
+        )
 
     def __len__(self) -> int:
         return len(self.audio_files)
@@ -154,7 +165,8 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
 
         # --- Apply Masking ---
         masked_mel_spec, original_mel_spec, mask_indices = _random_masking(
-            mel_spec, self.masking_ratio,
+            mel_spec,
+            self.masking_ratio,
         )
 
         # Type checks
@@ -165,6 +177,7 @@ class SSLDataset(Dataset[tuple[AudioTensor, AudioTensor, Tensor]]):
         assert mask_indices.ndim == 1
 
         return masked_mel_spec, original_mel_spec, mask_indices
+
 
 # --- Custom Collate Function (Optional but Recommended) ---
 def _ssl_collate_fn(
@@ -181,7 +194,7 @@ def _ssl_collate_fn(
     original_specs_padded = torch.stack(original_specs, dim=0)
 
     # Pad boolean masks
-    masks_padded = torch.stack(masks, dim=0) # Assuming masks have same length
+    masks_padded = torch.stack(masks, dim=0)  # Assuming masks have same length
 
     return masked_specs_padded, original_specs_padded, masks_padded
 
@@ -200,10 +213,14 @@ if __name__ == "__main__":
         fpath = dummy_ssl_audio_dir / fname
         dummy_fpaths.append(fpath)
         if not fpath.exists():
-            dummy_wav = torch.randn((1, ssl_config.TARGET_SAMPLE_RATE * 4)) # 4 sec random
+            dummy_wav = torch.randn(
+                (1, ssl_config.TARGET_SAMPLE_RATE * 4),
+            )  # 4 sec random
             torchaudio.save(fpath, dummy_wav, ssl_config.TARGET_SAMPLE_RATE)
             # print(f"[DEMO] Created dummy SSL audio file: {fpath}")
-    print(f"[DEMO] Ensured {num_dummy_files} dummy SSL audio files exist in {dummy_ssl_audio_dir}")
+    print(
+        f"[DEMO] Ensured {num_dummy_files} dummy SSL audio files exist in {dummy_ssl_audio_dir}",
+    )
 
     try:
         print("[DEMO] Creating dummy SSL Dataset...")
@@ -214,24 +231,35 @@ if __name__ == "__main__":
         masked_demo, orig_demo, mask_demo = ssl_dataset_demo[0]
         print(f"[DEMO]   Masked Spec shape: {masked_demo.shape}")
         print(f"[DEMO]   Original Spec shape: {orig_demo.shape}")
-        print(f"[DEMO]   Mask shape: {mask_demo.shape}") # Should be [N_FRAMES]
+        print(f"[DEMO]   Mask shape: {mask_demo.shape}")  # Should be [N_FRAMES]
         print(f"[DEMO]   Number of masked frames: {mask_demo.sum().item()}")
-        print(f"[DEMO]   Mask ratio check: {mask_demo.sum().item() / mask_demo.shape[0]:.2f} (Target: {ssl_config.MASKING_RATIO})")
+        print(
+            f"[DEMO]   Mask ratio check: {mask_demo.sum().item() / mask_demo.shape[0]:.2f} (Target: {ssl_config.MASKING_RATIO})",
+        )
 
         print("[DEMO] Creating dummy SSL DataLoader...")
         ssl_loader_demo = create_ssl_dataloader(
-            dummy_ssl_audio_dir, batch_size=4, num_workers=0,
+            dummy_ssl_audio_dir,
+            batch_size=4,
+            num_workers=0,
         )
 
         print("[DEMO] Getting first batch...")
         batch_masked, batch_orig, batch_mask = next(iter(ssl_loader_demo))
-        print(f"[DEMO]   Batch Masked shape: {batch_masked.shape}") # Should be [BATCH, N_MELS, N_FRAMES]
-        print(f"[DEMO]   Batch Original shape: {batch_orig.shape}") # Should be [BATCH, N_MELS, N_FRAMES]
-        print(f"[DEMO]   Batch Mask shape: {batch_mask.shape}")     # Should be [BATCH, N_FRAMES]
+        print(
+            f"[DEMO]   Batch Masked shape: {batch_masked.shape}",
+        )  # Should be [BATCH, N_MELS, N_FRAMES]
+        print(
+            f"[DEMO]   Batch Original shape: {batch_orig.shape}",
+        )  # Should be [BATCH, N_MELS, N_FRAMES]
+        print(
+            f"[DEMO]   Batch Mask shape: {batch_mask.shape}",
+        )  # Should be [BATCH, N_FRAMES]
 
     except Exception as e:
         import traceback
+
         print(f"[ERROR] Demonstration failed: {e}")
-        traceback.print_exc() # Print full traceback for debugging
+        traceback.print_exc()  # Print full traceback for debugging
 
     print("--- End ssl/data_loader.py demonstration ---")

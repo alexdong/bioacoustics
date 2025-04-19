@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader, Dataset
 AudioTensor = torch.Tensor
 LabelTensor = torch.Tensor
 
+
 # --- Top Level Function ---
 def create_dataloaders(
     metadata_path: Path,
@@ -50,7 +51,7 @@ def create_dataloaders(
         from sklearn.model_selection import train_test_split
 
         # Get stratification labels (primary_label)
-        strat_labels = full_df['primary_label']
+        strat_labels = full_df["primary_label"]
 
         # Perform split
         train_df, val_df = train_test_split(
@@ -78,8 +79,8 @@ def create_dataloaders(
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        pin_memory=True, # Usually good for GPU training
-        drop_last=True, # Drop last incomplete batch
+        pin_memory=True,  # Usually good for GPU training
+        drop_last=True,  # Drop last incomplete batch
     )
 
     val_loader = None
@@ -88,7 +89,7 @@ def create_dataloaders(
         val_loader = DataLoader(
             val_dataset,
             batch_size=batch_size,
-            shuffle=False, # No shuffle for validation
+            shuffle=False,  # No shuffle for validation
             num_workers=num_workers,
             pin_memory=True,
             drop_last=False,
@@ -96,6 +97,7 @@ def create_dataloaders(
 
     print("[DATA] DataLoaders created successfully.")
     return train_loader, val_loader
+
 
 # --- Dataset Class ---
 class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
@@ -120,11 +122,11 @@ class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
         # Doing it here avoids re-creation on every call
         self.mel_spectrogram = torchaudio.transforms.MelSpectrogram(
             sample_rate=self.target_sr,
-            n_fft=1024, # Example, adjust as needed
-            win_length=None, # Defaults to n_fft
+            n_fft=1024,  # Example, adjust as needed
+            win_length=None,  # Defaults to n_fft
             hop_length=config.HOP_LENGTH,
             n_mels=config.N_MELS,
-            power=2.0, # Power spectrogram
+            power=2.0,  # Power spectrogram
         )
         print(f"[DATASET] Initialized Dataset with {len(self.metadata)} samples.")
 
@@ -135,8 +137,8 @@ class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
         """Loads audio, processes, and returns spectrogram and labels."""
         row = self.metadata.iloc[index]
         # TODO: Adapt filename generation based on metadata.csv columns
-        filename = row['filename']
-        primary_label = row['primary_label']
+        filename = row["filename"]
+        primary_label = row["primary_label"]
         # secondary_labels = eval(row['secondary_labels']) # Assuming list string format
         # TODO: Handle secondary labels if needed for multi-label targets
 
@@ -168,7 +170,7 @@ class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
         elif current_len > self.chunk_samples:
             # TODO: Choose strategy: truncate start/end, random crop?
             # Simple truncation from start for now
-            waveform = waveform[:self.chunk_samples]
+            waveform = waveform[: self.chunk_samples]
 
         assert waveform.shape[0] == self.chunk_samples, "Padding/truncation failed"
 
@@ -197,6 +199,7 @@ class BirdClefDataset(Dataset[tuple[AudioTensor, LabelTensor]]):
 
         return mel_spec, label
 
+
 # --- Main Block for Testing/Demonstration ---
 if __name__ == "__main__":
     print("--- Running data_loader.py demonstration ---")
@@ -206,8 +209,8 @@ if __name__ == "__main__":
     dummy_audio_dir.mkdir(parents=True, exist_ok=True)
 
     dummy_metadata_data = {
-        'filename': ['bird1.ogg', 'bird2.ogg', 'mixed.ogg'],
-        'primary_label': ['sp_a1', 'sp_b1', 'sp_a2'],
+        "filename": ["bird1.ogg", "bird2.ogg", "mixed.ogg"],
+        "primary_label": ["sp_a1", "sp_b1", "sp_a2"],
         # 'secondary_labels': [[], ['sp_a1'], []] # Example
     }
     dummy_meta_df = pd.DataFrame(dummy_metadata_data)
@@ -217,16 +220,16 @@ if __name__ == "__main__":
 
     # Create dummy audio files (silent)
     sample_rate_orig = 16000
-    duration_orig = 6 # seconds
+    duration_orig = 6  # seconds
     num_frames_orig = sample_rate_orig * duration_orig
-    for fname in dummy_metadata_data['filename']:
+    for fname in dummy_metadata_data["filename"]:
         fpath = dummy_audio_dir / fname
-        if not fpath.exists(): # Avoid rewriting if run multiple times
-             dummy_wav = torch.zeros((1, num_frames_orig))
-             torchaudio.save(fpath, dummy_wav, sample_rate_orig)
-             print(f"[DEMO] Created dummy audio file: {fpath}")
+        if not fpath.exists():  # Avoid rewriting if run multiple times
+            dummy_wav = torch.zeros((1, num_frames_orig))
+            torchaudio.save(fpath, dummy_wav, sample_rate_orig)
+            print(f"[DEMO] Created dummy audio file: {fpath}")
 
-    dummy_species = ['sp_a1', 'sp_a2', 'sp_b1', 'sp_c1'] # Needs to match taxonomy
+    dummy_species = ["sp_a1", "sp_a2", "sp_b1", "sp_c1"]  # Needs to match taxonomy
 
     try:
         print("[DEMO] Creating dummy Dataset...")
@@ -235,22 +238,33 @@ if __name__ == "__main__":
 
         print("[DEMO] Getting first item...")
         mel_spec_demo, label_demo = dataset[0]
-        print(f"[DEMO]   Mel Spec shape: {mel_spec_demo.shape}") # Should be [N_MELS, N_FRAMES]
-        print(f"[DEMO]   Label shape: {label_demo.shape}")      # Should be [num_species]
+        print(
+            f"[DEMO]   Mel Spec shape: {mel_spec_demo.shape}",
+        )  # Should be [N_MELS, N_FRAMES]
+        print(f"[DEMO]   Label shape: {label_demo.shape}")  # Should be [num_species]
         print(f"[DEMO]   Label: {label_demo}")
 
         print("[DEMO] Creating dummy DataLoader...")
         dataloader, _ = create_dataloaders(
-            dummy_meta_path, dummy_audio_dir, dummy_species, batch_size=2, num_workers=0,
+            dummy_meta_path,
+            dummy_audio_dir,
+            dummy_species,
+            batch_size=2,
+            num_workers=0,
         )
         print("[DEMO] Getting first batch...")
         batch_mels, batch_labels = next(iter(dataloader))
-        print(f"[DEMO]   Batch Mels shape: {batch_mels.shape}") # Should be [BATCH, N_MELS, N_FRAMES]
-        print(f"[DEMO]   Batch Labels shape: {batch_labels.shape}") # Should be [BATCH, num_species]
+        print(
+            f"[DEMO]   Batch Mels shape: {batch_mels.shape}",
+        )  # Should be [BATCH, N_MELS, N_FRAMES]
+        print(
+            f"[DEMO]   Batch Labels shape: {batch_labels.shape}",
+        )  # Should be [BATCH, num_species]
 
     except Exception as e:
         import traceback
+
         print(f"[ERROR] Demonstration failed: {e}")
-        traceback.print_exc() # Print full traceback for debugging
+        traceback.print_exc()  # Print full traceback for debugging
 
     print("--- End data_loader.py demonstration ---")

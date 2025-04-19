@@ -1,7 +1,7 @@
 import collections
 import csv
 import os
-from typing import Dict, Set, Tuple, Optional, Union, List
+from typing import Dict, Optional, Set, Tuple, Union
 
 
 def parse_duration(duration_str: str) -> int:

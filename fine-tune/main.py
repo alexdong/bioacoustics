@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # import predictor # Optional: if running prediction after training
 
+
 def set_seed(seed: int) -> None:
     """Sets random seed for reproducibility."""
     random.seed(seed)
@@ -27,6 +28,7 @@ def set_seed(seed: int) -> None:
         # torch.backends.cudnn.deterministic = True
         # torch.backends.cudnn.benchmark = False # Can slow down, but more deterministic
 
+
 # --- Main Execution ---
 print("--- Starting Fine-Tuning Script ---")
 set_seed(config.RANDOM_SEED)
@@ -35,15 +37,21 @@ print(f"[MAIN] Using device: {device}")
 
 # 1. Load Metadata and Define Species List
 print("[MAIN] Loading training metadata...")
-assert config.TRAIN_METADATA_PATH.is_file(), f"Metadata not found: {config.TRAIN_METADATA_PATH}"
+assert (
+    config.TRAIN_METADATA_PATH.is_file()
+), f"Metadata not found: {config.TRAIN_METADATA_PATH}"
 train_meta_df = pd.read_csv(config.TRAIN_METADATA_PATH)
 # Verify that primary_label column exists in metadata
-assert 'primary_label' in train_meta_df.columns, "Missing 'primary_label' column in metadata"
-species_list = sorted(list(train_meta_df['primary_label'].unique()))
+assert (
+    "primary_label" in train_meta_df.columns
+), "Missing 'primary_label' column in metadata"
+species_list = sorted(list(train_meta_df["primary_label"].unique()))
 num_classes = len(species_list)
 print(f"[MAIN] Found {num_classes} unique species.")
 if num_classes != config.NUM_CLASSES:
-    print(f"[WARNING] Mismatch between detected classes ({num_classes}) and config.NUM_CLASSES ({config.NUM_CLASSES})")
+    print(
+        f"[WARNING] Mismatch between detected classes ({num_classes}) and config.NUM_CLASSES ({config.NUM_CLASSES})",
+    )
     print("[WARNING] Updating config.NUM_CLASSES to match detected classes")
     config.NUM_CLASSES = num_classes
 
@@ -51,7 +59,8 @@ if num_classes != config.NUM_CLASSES:
 print("[MAIN] Loading taxonomy and computing distance matrix...")
 try:
     _, distance_matrix_np = taxonomy.load_and_compute_distance_matrix(
-        config.TAXONOMY_PATH, species_list,
+        config.TAXONOMY_PATH,
+        species_list,
     )
     # Save distance matrix for potential reuse/analysis
     dist_matrix_path = config.TEMP_DIR / "distance_matrix.npy"
@@ -77,7 +86,9 @@ train_loader, val_loader = data_loader.create_dataloaders(
 )
 # Basic check
 assert train_loader is not None, "Train loader creation failed"
-assert val_loader is not None, "Validation loader creation failed - required for proper evaluation"
+assert (
+    val_loader is not None
+), "Validation loader creation failed - required for proper evaluation"
 
 
 # 4. Build Model
@@ -93,19 +104,31 @@ print("[MAIN] Setting up optimizer and scheduler...")
 # Apply differential learning rates
 encoder_params = fine_tune_model.encoder.parameters()
 head_params = fine_tune_model.classifier_head.parameters()
-optimizer = optim.AdamW([
-    {'params': encoder_params, 'lr': config.LEARNING_RATE_ENCODER, 'weight_decay': config.WEIGHT_DECAY},
-    {'params': head_params, 'lr': config.LEARNING_RATE_HEAD, 'weight_decay': config.WEIGHT_DECAY}, # Can have different WD if needed
-])
+optimizer = optim.AdamW(
+    [
+        {
+            "params": encoder_params,
+            "lr": config.LEARNING_RATE_ENCODER,
+            "weight_decay": config.WEIGHT_DECAY,
+        },
+        {
+            "params": head_params,
+            "lr": config.LEARNING_RATE_HEAD,
+            "weight_decay": config.WEIGHT_DECAY,
+        },  # Can have different WD if needed
+    ],
+)
 
 # Example scheduler: Reduce learning rate when validation loss plateaus
 # Use validation loader existence to decide if scheduler is active
 scheduler = None
 if val_loader is not None:
-     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=3, verbose=True)
-     print("[MAIN] Using ReduceLROnPlateau scheduler based on validation loss.")
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.2, patience=3, verbose=True,
+    )
+    print("[MAIN] Using ReduceLROnPlateau scheduler based on validation loss.")
 else:
-     print("[MAIN] No validation loader, scheduler not used.")
+    print("[MAIN] No validation loader, scheduler not used.")
 
 
 # 6. Run Training
@@ -114,10 +137,10 @@ try:
     trainer.train_model(
         model=fine_tune_model,
         train_loader=train_loader,
-        val_loader=val_loader, # Pass None if no validation set
+        val_loader=val_loader,  # Pass None if no validation set
         distance_matrix_np=distance_matrix_np,
         optimizer=optimizer,
-        scheduler=scheduler, # Pass None if not used
+        scheduler=scheduler,  # Pass None if not used
         num_epochs=config.NUM_EPOCHS,
         device=device,
         checkpoint_dir=config.CHECKPOINT_DIR,
@@ -127,6 +150,7 @@ try:
 except Exception as e:
     print(f"\n[ERROR] Training loop failed: {e}")
     import traceback
+
     traceback.print_exc()
     print("[MAIN] Training aborted due to error.")
 else:
@@ -152,4 +176,6 @@ else:
 
 
 print("\n--- Fine-Tuning Script Finished ---")
-print("Jeeves approves. Remember, temporary files in /tmp were not tidied up, as requested. Pip pip!")
+print(
+    "Jeeves approves. Remember, temporary files in /tmp were not tidied up, as requested. Pip pip!",
+)
