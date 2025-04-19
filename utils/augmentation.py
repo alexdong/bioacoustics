@@ -187,7 +187,7 @@ def create_augmentation_pipeline(
             p=p_low,
         ),
         BitCrush(min_bit_depth=10, max_bit_depth=16, p=p_low),
-        TanhDistortion(min_drive=0.1, max_drive=0.5, p=p_low),
+        TanhDistortion(min_distortion=0.1, max_distortion=0.5, p=p_low),
         TimeMask(
             min_band_part=0.02,
             max_band_part=0.15,
