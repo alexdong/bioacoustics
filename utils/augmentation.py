@@ -150,7 +150,6 @@ def create_augmentation_pipeline(
                     min_semitones=-2.5,
                     max_semitones=2.5,
                     p=1.0,
-                    sample_rate=sample_rate,
                 ),
             ],
             p=p_mid,
