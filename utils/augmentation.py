@@ -58,6 +58,7 @@ Summary of Design Decisions Based on Discussion & Paper Review:
 
 import os
 import sys
+import random
 import numpy as np
 import typing
 from audiomentations import (
@@ -148,7 +149,7 @@ def create_augmentation_pipeline(
         TimeMask(min_band_part=0.02, max_band_part=0.15, fade=True, p=p_time_mask, sample_rate=sample_rate),
     ]
 
-    if random.int(0, 100) < 10 # 10% chance to use IR augmentation
+    if random.randint(0, 100) < 10: # 10% chance to use IR augmentation
         # We already asserted ir_dir exists and checked it's readable and non-empty
         print(f"[INFO] Adding ApplyImpulseResponse with p={p_ir} using IRs from: {ir_dir}")
         transforms_list.append(
