@@ -167,8 +167,8 @@ def create_augmentation_pipeline(
                 ),
                 AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=1.0),
                 AddColorNoise(
-                    min_snr_in_db=5.0,
-                    max_snr_in_db=30.0,
+                    min_snr_db=5.0,
+                    max_snr_db=30.0,
                     color="pink",
                     p=1.0,
                 ),
