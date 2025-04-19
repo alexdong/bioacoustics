@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Trains an EfficientNet-B1 model for bioacoustic species classification.
-Refactored to use utility functions.
-"""
-
 import sys
 import time
 from typing import Any, Dict, Optional, Tuple, TypeAlias
@@ -15,8 +9,6 @@ from torchmetrics.classification import MulticlassAUROC
 from torchvision.models import efficientnet_b1
 
 from utils.audio_processing import create_spectrogram_transforms
-
-# Assumes utils/augmentation.py exists and has create_augmentation_pipeline
 from utils.augmentation import create_augmentation_pipeline
 from utils.config import (
     CLASS_MAPPING_FILE,
@@ -39,8 +31,6 @@ from utils.config import (
 )
 from utils.data_utils import get_dataloaders, load_class_mapping
 from utils.device import select_device
-
-# --- Project Utilities ---
 from utils.logging import log, set_log_level
 from utils.model_utils import count_parameters, load_checkpoint, save_checkpoint
 from utils.training_utils import (
@@ -165,7 +155,9 @@ def setup_training_components(
     """Sets up optimizer, loss, scheduler, and metric."""
     log("INFO", "Setting up optimizer, loss, scheduler, metrics...")
     optimizer = OPTIMIZER_CLS(
-        model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY,
+        model.parameters(),
+        lr=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
     )
     criterion = nn.CrossEntropyLoss()  # Standard classification loss
 
@@ -177,7 +169,8 @@ def setup_training_components(
         f"Scheduler: CosineAnnealingLR with T_max = {num_training_steps} steps after warmup",
     )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=num_training_steps,
+        optimizer,
+        T_max=num_training_steps,
     )
     # We will handle warmup manually in the training loop for simplicity here
 
@@ -301,7 +294,12 @@ def train_model() -> None:
 
         # Validate
         val_loss, val_metric_value = validate(
-            model, val_loader, criterion, val_metric, device, epoch,
+            model,
+            val_loader,
+            criterion,
+            val_metric,
+            device,
+            epoch,
         )
 
         # Step the scheduler *after* validation and *before* the next training epoch, but only after warmup
@@ -374,7 +372,12 @@ def train_model() -> None:
         # Create a separate metric instance for test evaluation if needed (or reset existing)
         # Reusing val_metric here, but ensure it's reset if state matters across splits
         test_loss, test_metric = validate(
-            model, test_loader, criterion, val_metric, device, epoch=-1,
+            model,
+            test_loader,
+            criterion,
+            val_metric,
+            device,
+            epoch=-1,
         )  # Use epoch=-1 for clarity
 
         log("INFO", f"--- Final Test Results ({EXPERIMENT_NAME}) ---")
