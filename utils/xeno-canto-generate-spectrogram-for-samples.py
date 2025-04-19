@@ -33,7 +33,7 @@ S3_BUCKET_PREFIX = "s3://alexdong-bioacoustics/xeno-canto/"
 # --- Helper Functions ---
 
 
-def run_cli_command(command_list: list[str], command_desc: str = "Command", timeout: int = 300):
+def run_cli_command(command_list: list[str], command_desc: str = "Command", timeout: int = 300) -> tuple[bool, str]:
     """Runs a generic command line command using subprocess."""
     try:
         subprocess.run(
@@ -79,7 +79,7 @@ def generate_spectrogram(
     fmin: int | float,
     fmax: int | float,
     power: float,
-):
+) -> tuple[bool, str]:
     """Loads an audio segment, generates a Mel spectrogram, and saves as PNG."""
     try:
         waveform, sr = torchaudio.load(audio_path)
@@ -156,7 +156,7 @@ def generate_spectrogram(
 
 def download_s3_file(
     recording_id: str, json_dir: str, s3_bucket_prefix: str, mp3_dir: str, skip_existing: bool = True,
-):
+) -> dict:
     """Downloads a single MP3 file from S3 based on its JSON metadata."""
     status = {"id": recording_id, "success": False, "reason": "", "skipped": False}
     json_path = os.path.join(json_dir, f"{recording_id}.json")
@@ -231,7 +231,7 @@ def download_s3_file(
 # --- Audio Processing Function ---
 
 
-def process_audio_files(rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str):
+def process_audio_files(rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str) -> dict:
     """Processes a single recording: convert, segment, generate spectrograms."""
     species_name = species_name.replace("-", "_")
 
@@ -658,7 +658,8 @@ def main() -> None:
 if __name__ == "__main__":
     # Add check for soundfile if needed by torchaudio backend
     try:
-        import soundfile
+        import importlib.util
+        has_soundfile = importlib.util.find_spec("soundfile") is not None
     except ImportError:
-        pass  # Don't warn if not present unless torchaudio fails later
+        has_soundfile = False
     main()
