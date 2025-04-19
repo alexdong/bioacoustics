@@ -57,29 +57,43 @@ Summary of Design Decisions Based on Discussion & Paper Review:
 """
 
 import os
-import sys
 import random
-import numpy as np
+import sys
 import typing
+
+import numpy as np
 from audiomentations import (
-    Compose, OneOf, ApplyImpulseResponse, AddBackgroundNoise, AddGaussianSNR,
-    AddColorNoise, TimeStretch, PitchShift, Shift, Gain, ClippingDistortion,
-    AirAbsorption, BitCrush, TanhDistortion, TimeMask, BandPassFilter
+    AddBackgroundNoise,
+    AddColorNoise,
+    AddGaussianSNR,
+    AirAbsorption,
+    ApplyImpulseResponse,
+    BandPassFilter,
+    BitCrush,
+    ClippingDistortion,
+    Compose,
+    Gain,
+    OneOf,
+    PitchShift,
+    Shift,
+    TanhDistortion,
+    TimeMask,
+    TimeStretch,
 )
 
 # --- Configuration Constants ---
-TARGET_SAMPLE_RATE: typing.Final[int] = 32000 # Hz
+TARGET_SAMPLE_RATE: typing.Final[int] = 32000  # Hz
 
 # Default paths
 DEFAULT_ESC50_DIR: typing.Final[str] = "datasets/ESC-50/audio"
 DEFAULT_IR_DIR: typing.Final[str] = "datasets/IR"
 
 # Default probabilities
-DEFAULT_P_IR: typing.Final[float] = 0.15   # Probability of applying Impulse Response
+DEFAULT_P_IR: typing.Final[float] = 0.15  # Probability of applying Impulse Response
 DEFAULT_P_LOW: typing.Final[float] = 0.15  # Low probability for specific/subtle effects
-DEFAULT_P_MID: typing.Final[float] = 0.3   # Medium probability for common effects
+DEFAULT_P_MID: typing.Final[float] = 0.3  # Medium probability for common effects
 DEFAULT_P_HIGH: typing.Final[float] = 0.5  # High probability for core effects
-DEFAULT_P_TIME_MASK: typing.Final[float] = 0.3 # Based on Lasseck 2018 paper
+DEFAULT_P_TIME_MASK: typing.Final[float] = 0.3  # Based on Lasseck 2018 paper
 
 
 def create_augmentation_pipeline(
@@ -90,7 +104,7 @@ def create_augmentation_pipeline(
     p_low: float = DEFAULT_P_LOW,
     p_mid: float = DEFAULT_P_MID,
     p_high: float = DEFAULT_P_HIGH,
-    p_time_mask: float = DEFAULT_P_TIME_MASK
+    p_time_mask: float = DEFAULT_P_TIME_MASK,
 ) -> Compose:
     """
     Creates and returns an audiomentations Compose object for training.
@@ -113,7 +127,9 @@ def create_augmentation_pipeline(
     print(f"[INFO] Creating augmentation pipeline with SR={sample_rate} Hz.")
     print(f"[INFO] Using ESC-50 from: {esc50_dir}")
     print(f"[INFO] Using IR from: {ir_dir} with p={p_ir}")
-    print(f"[INFO] Other Probabilities: p_low={p_low}, p_mid={p_mid}, p_high={p_high}, p_time_mask={p_time_mask}")
+    print(
+        f"[INFO] Other Probabilities: p_low={p_low}, p_mid={p_mid}, p_high={p_high}, p_time_mask={p_time_mask}",
+    )
 
     # --- Input Path Validation ---
     assert os.path.isdir(esc50_dir), f"ESC-50 directory not found: {esc50_dir}"
@@ -122,49 +138,84 @@ def create_augmentation_pipeline(
     # --- Build the Augmentation Pipeline List ---
     transforms_list: typing.List[typing.Callable] = [
         Gain(min_gain_in_db=-10.0, max_gain_in_db=6.0, p=p_high),
-
-        ClippingDistortion(min_percentile_threshold=0, max_percentile_threshold=10, p=p_low),
-
-        OneOf([
-            TimeStretch(min_rate=0.85, max_rate=1.15, p=1.0, leave_length_unchanged=True),
-            PitchShift(min_semitones=-2.5, max_semitones=2.5, p=1.0, sample_rate=sample_rate),
-        ], p=p_mid),
-
-        Shift(min_shift=-0.1, max_shift=0.1, p=p_high, sample_rate=sample_rate, rollover=True),
-
-        OneOf([
-            AddBackgroundNoise(sounds_path=esc50_dir, min_snr_in_db=3.0, max_snr_in_db=15.0, p=1.0),
-            AddGaussianSNR(min_snr_in_db=5.0, max_snr_in_db=40.0, p=1.0),
-            AddColorNoise(min_snr_in_db=5.0, max_snr_in_db=30.0, min_color="pink", max_color="pink", p=1.0)
-        ], p=p_mid),
-
-        AirAbsorption(min_distance=10.0, max_distance=100.0, p=p_low, sample_rate=sample_rate),
-
-        BandPassFilter(min_center_freq=300.0, max_center_freq=4000.0, min_bandwidth_fraction=0.5, max_bandwidth_fraction=1.9, p=p_low, sample_rate=sample_rate),
-
+        ClippingDistortion(
+            min_percentile_threshold=0, max_percentile_threshold=10, p=p_low,
+        ),
+        OneOf(
+            [
+                TimeStretch(
+                    min_rate=0.85, max_rate=1.15, p=1.0, leave_length_unchanged=True,
+                ),
+                PitchShift(
+                    min_semitones=-2.5,
+                    max_semitones=2.5,
+                    p=1.0,
+                    sample_rate=sample_rate,
+                ),
+            ],
+            p=p_mid,
+        ),
+        Shift(
+            min_shift=-0.1,
+            max_shift=0.1,
+            p=p_high,
+            sample_rate=sample_rate,
+            rollover=True,
+        ),
+        OneOf(
+            [
+                AddBackgroundNoise(
+                    sounds_path=esc50_dir, min_snr_in_db=3.0, max_snr_in_db=15.0, p=1.0,
+                ),
+                AddGaussianSNR(min_snr_in_db=5.0, max_snr_in_db=40.0, p=1.0),
+                AddColorNoise(
+                    min_snr_in_db=5.0,
+                    max_snr_in_db=30.0,
+                    min_color="pink",
+                    max_color="pink",
+                    p=1.0,
+                ),
+            ],
+            p=p_mid,
+        ),
+        AirAbsorption(
+            min_distance=10.0, max_distance=100.0, p=p_low, sample_rate=sample_rate,
+        ),
+        BandPassFilter(
+            min_center_freq=300.0,
+            max_center_freq=4000.0,
+            min_bandwidth_fraction=0.5,
+            max_bandwidth_fraction=1.9,
+            p=p_low,
+            sample_rate=sample_rate,
+        ),
         BitCrush(min_bit_depth=10, max_bit_depth=16, p=p_low),
-
         TanhDistortion(min_drive=0.1, max_drive=0.5, p=p_low),
-
-        TimeMask(min_band_part=0.02, max_band_part=0.15, fade=True, p=p_time_mask, sample_rate=sample_rate),
+        TimeMask(
+            min_band_part=0.02,
+            max_band_part=0.15,
+            fade=True,
+            p=p_time_mask,
+            sample_rate=sample_rate,
+        ),
     ]
 
-    if random.randint(0, 100) < 10: # 10% chance to use IR augmentation
+    if random.randint(0, 100) < 10:  # 10% chance to use IR augmentation
         # We already asserted ir_dir exists and checked it's readable and non-empty
-        print(f"[INFO] Adding ApplyImpulseResponse with p={p_ir} using IRs from: {ir_dir}")
+        print(
+            f"[INFO] Adding ApplyImpulseResponse with p={p_ir} using IRs from: {ir_dir}",
+        )
         transforms_list.append(
             ApplyImpulseResponse(
-                ir_path=ir_dir,
-                p=p_ir,
-                output_type="dict",
-                leave_length_unchanged=True
-            )
+                ir_path=ir_dir, p=p_ir, output_type="dict", leave_length_unchanged=True,
+            ),
         )
-
 
     # --- Create the main Compose object ---
     augmenter = Compose(transforms=transforms_list)
-    print(f"[INFO] Augmentation pipeline created successfully with {len(transforms_list)} primary transform groups.")
+    print(
+        f"[INFO] Augmentation pipeline created successfully with {len(transforms_list)} primary transform groups.",
+    )
 
     return augmenter
 
@@ -178,7 +229,7 @@ def main() -> None:
     duration_seconds = 5
     try:
         dummy_audio_segment = np.random.uniform(
-            low=-0.5, high=0.5, size=(int(TARGET_SAMPLE_RATE * duration_seconds),)
+            low=-0.5, high=0.5, size=(int(TARGET_SAMPLE_RATE * duration_seconds),),
         ).astype(np.float32)
         print(f"[MAIN] Generated dummy audio shape: {dummy_audio_segment.shape}")
 
@@ -187,52 +238,80 @@ def main() -> None:
         os.makedirs(DEFAULT_ESC50_DIR, exist_ok=True)
         dummy_esc_noise_path = os.path.join(DEFAULT_ESC50_DIR, "dummy_noise.wav")
         if not os.path.exists(dummy_esc_noise_path):
-             import wave
-             with wave.open(dummy_esc_noise_path, 'wb') as wf:
-                 wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(TARGET_SAMPLE_RATE)
-                 wf.writeframes(np.zeros(TARGET_SAMPLE_RATE * 1, dtype=np.int16).tobytes())
-             print(f"[MAIN] Created dummy noise file: {dummy_esc_noise_path}")
+            import wave
+
+            with wave.open(dummy_esc_noise_path, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(TARGET_SAMPLE_RATE)
+                wf.writeframes(
+                    np.zeros(TARGET_SAMPLE_RATE * 1, dtype=np.int16).tobytes(),
+                )
+            print(f"[MAIN] Created dummy noise file: {dummy_esc_noise_path}")
 
         os.makedirs(DEFAULT_IR_DIR, exist_ok=True)
         dummy_ir_path = os.path.join(DEFAULT_IR_DIR, "dummy_ir.wav")
         if not os.path.exists(dummy_ir_path):
-             import wave
-             with wave.open(dummy_ir_path, 'wb') as wf:
-                 wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(TARGET_SAMPLE_RATE)
-                 wf.writeframes(np.zeros(TARGET_SAMPLE_RATE * 1, dtype=np.int16).tobytes())
-             print(f"[MAIN] Created dummy IR file: {dummy_ir_path}")
+            import wave
 
+            with wave.open(dummy_ir_path, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(TARGET_SAMPLE_RATE)
+                wf.writeframes(
+                    np.zeros(TARGET_SAMPLE_RATE * 1, dtype=np.int16).tobytes(),
+                )
+            print(f"[MAIN] Created dummy IR file: {dummy_ir_path}")
 
         # --- Create Pipeline using Defaults ---
         # Call without arguments to test the default values
         print("[MAIN] Creating pipeline using default parameters...")
         augmenter_instance = create_augmentation_pipeline()
 
-
         # --- Apply Augmentation ---
         print("[MAIN] Applying augmentation to dummy audio...")
-        augmented_segment = augmenter_instance(samples=dummy_audio_segment, sample_rate=TARGET_SAMPLE_RATE)
+        augmented_segment = augmenter_instance(
+            samples=dummy_audio_segment, sample_rate=TARGET_SAMPLE_RATE,
+        )
         print(f"[MAIN] Augmented audio shape: {augmented_segment.shape}")
 
         # --- Verification ---
-        assert augmented_segment.shape == dummy_audio_segment.shape, "Augmentation changed audio length!"
-        assert augmented_segment.dtype == np.float32, "Augmentation changed audio dtype!"
-        print("[MAIN] ✅ Augmentation applied successfully, shape and dtype maintained.")
+        assert (
+            augmented_segment.shape == dummy_audio_segment.shape
+        ), "Augmentation changed audio length!"
+        assert (
+            augmented_segment.dtype == np.float32
+        ), "Augmentation changed audio dtype!"
+        print(
+            "[MAIN] ✅ Augmentation applied successfully, shape and dtype maintained.",
+        )
 
         if np.allclose(dummy_audio_segment, augmented_segment):
-             print("[WARN] ⚠️ Augmented audio is identical to original. Check probabilities if this happens often.")
+            print(
+                "[WARN] ⚠️ Augmented audio is identical to original. Check probabilities if this happens often.",
+            )
         else:
-             print("[MAIN] ✅ Augmented audio differs from original.")
+            print("[MAIN] ✅ Augmented audio differs from original.")
 
         print("[MAIN] Augmentation pipeline demonstration finished. ✨")
 
     except ImportError as e:
-        print(f"[ERROR] Missing dependency for demo (numpy or wave?): {e}", file=sys.stderr)
+        print(
+            f"[ERROR] Missing dependency for demo (numpy or wave?): {e}",
+            file=sys.stderr,
+        )
     except AssertionError as e:
-        print(f"[ERROR] Assertion failed during demo (check paths exist?): {e}", file=sys.stderr)
+        print(
+            f"[ERROR] Assertion failed during demo (check paths exist?): {e}",
+            file=sys.stderr,
+        )
     except Exception as e:
-        print(f"[ERROR] An unexpected error occurred during the demo: {e}", file=sys.stderr)
+        print(
+            f"[ERROR] An unexpected error occurred during the demo: {e}",
+            file=sys.stderr,
+        )
         import traceback
+
         traceback.print_exc()
 
 
