@@ -165,7 +165,7 @@ def create_augmentation_pipeline(
         OneOf(
             [
                 AddBackgroundNoise(
-                    sounds_path=esc50_dir, min_snr_in_db=3.0, max_snr_in_db=15.0, p=1.0,
+                    sounds_path=esc50_dir, min_snr_db=3.0, max_snr_db=15.0, p=1.0,
                 ),
                 AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=1.0),
                 AddColoredNoise(
