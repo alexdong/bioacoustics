@@ -64,7 +64,7 @@ import typing
 import numpy as np
 from audiomentations import (
     AddBackgroundNoise,
-    AddColoredNoise,
+    AddColorNoise,
     AddGaussianNoise,
     AirAbsorption,
     ApplyImpulseResponse,
