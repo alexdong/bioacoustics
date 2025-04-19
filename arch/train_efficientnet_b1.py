@@ -156,7 +156,7 @@ def setup_training_components(
     model: nn.Module,
     num_epochs: int,  # Needed for scheduler T_max
     steps_per_epoch: int,  # Needed for OneCycleLR if used
-) -> Tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler, Metric]:  # type: ignore
+) -> Tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler, Metric, str]:  # type: ignore
     """Sets up optimizer, loss, scheduler, and metric."""
     log("INFO", "Setting up optimizer, loss, scheduler, metrics...")
     optimizer = OPTIMIZER_CLS(
