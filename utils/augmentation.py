@@ -137,7 +137,7 @@ def create_augmentation_pipeline(
 
     # --- Build the Augmentation Pipeline List ---
     transforms_list: typing.List[typing.Callable] = [
-        Gain(min_gain_in_db=-10.0, max_gain_in_db=6.0, p=p_high),
+        Gain(min_gain_db=-10.0, max_gain_db=6.0, p=p_high),
         ClippingDistortion(
             min_percentile_threshold=0, max_percentile_threshold=10, p=p_low,
         ),
