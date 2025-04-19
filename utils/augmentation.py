@@ -158,7 +158,6 @@ def create_augmentation_pipeline(
             min_shift=-0.1,
             max_shift=0.1,
             p=p_high,
-            sample_rate=sample_rate,
             rollover=True,
         ),
         OneOf(
