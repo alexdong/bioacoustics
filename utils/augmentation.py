@@ -139,12 +139,17 @@ def create_augmentation_pipeline(
     transforms_list: typing.List[typing.Callable] = [
         Gain(min_gain_db=-10.0, max_gain_db=6.0, p=p_high),
         ClippingDistortion(
-            min_percentile_threshold=0, max_percentile_threshold=10, p=p_low,
+            min_percentile_threshold=0,
+            max_percentile_threshold=10,
+            p=p_low,
         ),
         OneOf(
             [
                 TimeStretch(
-                    min_rate=0.85, max_rate=1.15, p=1.0, leave_length_unchanged=True,
+                    min_rate=0.85,
+                    max_rate=1.15,
+                    p=1.0,
+                    leave_length_unchanged=True,
                 ),
                 PitchShift(
                     min_semitones=-2.5,
@@ -163,7 +168,10 @@ def create_augmentation_pipeline(
         OneOf(
             [
                 AddBackgroundNoise(
-                    sounds_path=esc50_dir, min_snr_db=3.0, max_snr_db=15.0, p=1.0,
+                    sounds_path=esc50_dir,
+                    min_snr_db=3.0,
+                    max_snr_db=15.0,
+                    p=1.0,
                 ),
                 AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=1.0),
                 AddColorNoise(
@@ -177,7 +185,9 @@ def create_augmentation_pipeline(
             p=p_mid,
         ),
         AirAbsorption(
-            min_distance=10.0, max_distance=100.0, p=p_low,
+            min_distance=10.0,
+            max_distance=100.0,
+            p=p_low,
         ),
         BandPassFilter(
             min_center_freq=300.0,
@@ -203,7 +213,9 @@ def create_augmentation_pipeline(
         )
         transforms_list.append(
             ApplyImpulseResponse(
-                ir_path=ir_dir, p=p_ir, leave_length_unchanged=True,
+                ir_path=ir_dir,
+                p=p_ir,
+                leave_length_unchanged=True,
             ),
         )
 
@@ -225,7 +237,9 @@ def main() -> None:
     duration_seconds = 5
     try:
         dummy_audio_segment = np.random.uniform(
-            low=-0.5, high=0.5, size=(int(TARGET_SAMPLE_RATE * duration_seconds),),
+            low=-0.5,
+            high=0.5,
+            size=(int(TARGET_SAMPLE_RATE * duration_seconds),),
         ).astype(np.float32)
         print(f"[MAIN] Generated dummy audio shape: {dummy_audio_segment.shape}")
 
@@ -267,7 +281,8 @@ def main() -> None:
         # --- Apply Augmentation ---
         print("[MAIN] Applying augmentation to dummy audio...")
         augmented_segment = augmenter_instance(
-            samples=dummy_audio_segment, sample_rate=TARGET_SAMPLE_RATE,
+            samples=dummy_audio_segment,
+            sample_rate=TARGET_SAMPLE_RATE,
         )
         print(f"[MAIN] Augmented audio shape: {augmented_segment.shape}")
 
