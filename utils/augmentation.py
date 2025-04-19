@@ -177,7 +177,7 @@ def create_augmentation_pipeline(
             p=p_mid,
         ),
         AirAbsorption(
-            min_distance=10.0, max_distance=100.0, p=p_low, sample_rate=sample_rate,
+            min_distance=10.0, max_distance=100.0, p=p_low,
         ),
         BandPassFilter(
             min_center_freq=300.0,
