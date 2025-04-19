@@ -185,7 +185,6 @@ def create_augmentation_pipeline(
             min_bandwidth_fraction=0.5,
             max_bandwidth_fraction=1.9,
             p=p_low,
-            sample_rate=sample_rate,
         ),
         BitCrush(min_bit_depth=10, max_bit_depth=16, p=p_low),
         TanhDistortion(min_drive=0.1, max_drive=0.5, p=p_low),
@@ -194,7 +193,6 @@ def create_augmentation_pipeline(
             max_band_part=0.15,
             fade=True,
             p=p_time_mask,
-            sample_rate=sample_rate,
         ),
     ]
 
