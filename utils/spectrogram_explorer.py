@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Any, Optional
 
 import librosa
 import librosa.display
@@ -41,7 +42,7 @@ INIT_INTERPOLATION = "nearest"
 
 
 class MatplotlibCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=12, height=8, dpi=INIT_DPI) -> None:
+    def __init__(self, parent: Any = None, width: int = 12, height: int = 8, dpi: int = INIT_DPI) -> None:
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.ax = self.fig.add_subplot(111)
         super(MatplotlibCanvas, self).__init__(self.fig)
@@ -298,17 +299,17 @@ class SpectrogramExplorer(QMainWindow):
         self.update_spectrogram()
 
     @Slot(str)
-    def on_cmap_changed(self, cmap) -> None:
+    def on_cmap_changed(self, cmap: str) -> None:
         self.current_cmap = cmap
         self.update_spectrogram()
 
     @Slot(str)
-    def on_interpolation_changed(self, interpolation) -> None:
+    def on_interpolation_changed(self, interpolation: str) -> None:
         self.current_interpolation = interpolation
         self.update_spectrogram()
 
     @Slot(str)
-    def on_scale_changed(self, scale) -> None:
+    def on_scale_changed(self, scale: str) -> None:
         self.current_scale = scale
         self.update_spectrogram()
 
@@ -354,7 +355,7 @@ class SpectrogramExplorer(QMainWindow):
             self.canvas.fig.savefig(file_path, dpi=save_dpi, bbox_inches="tight")
             print(f"Saved spectrogram to {file_path}")
 
-    def compute_spectrogram(self, frame_length, hop_length, scale, n_mels):
+    def compute_spectrogram(self, frame_length: int, hop_length: int, scale: str, n_mels: int) -> Optional[np.ndarray]:
         if self.y is not None:
             if scale == "mel":
                 S = librosa.feature.melspectrogram(

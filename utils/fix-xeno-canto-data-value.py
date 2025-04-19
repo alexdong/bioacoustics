@@ -35,7 +35,7 @@ DEFAULT_TIME_STR = "09:00:00"  # Default value for invalid/missing times
 # --- End Configuration ---
 
 
-def fix_invalid_json_dates(folder_path, date_format) -> None:
+def fix_invalid_json_dates(folder_path: str, date_format: str) -> None:
     """
     Scans a folder for JSON files, checks if the 'date' field can be parsed,
     and replaces unparseable dates with today's date.

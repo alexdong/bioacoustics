@@ -3,6 +3,7 @@ import json
 import logging
 import pathlib
 from collections import defaultdict
+from typing import Dict, List, Optional, Any, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,7 +13,7 @@ logging.basicConfig(
 )
 
 
-def parse_filename(filepath):
+def parse_filename(filepath: str) -> Optional[Dict[str, Any]]:
     """
     Parses the filename to extract species, recording ID, and segment number.
     Assumes filename format: {specie_en}-{recording_id}-{segment}.png
@@ -49,7 +50,7 @@ def parse_filename(filepath):
         return None
 
 
-def create_splits(input_dir, output_dir, test_size=0.1, val_size=0.1, random_state=42) -> None:
+def create_splits(input_dir: str, output_dir: str, test_size: float = 0.1, val_size: float = 0.1, random_state: int = 42) -> None:
     """
     Scans the input directory, splits data by recording ID with stratification by species,
     and saves train, validation, and test file lists (with labels) to CSV files.
@@ -217,7 +218,7 @@ def create_splits(input_dir, output_dir, test_size=0.1, val_size=0.1, random_sta
         logging.info("No recordings left for train/validation after test split.")
 
     # --- Collect Filepaths for Each Split ---
-    def get_split_data(recording_ids):
+    def get_split_data(recording_ids: List) -> List[Dict[str, Any]]:
         split_files = []
         for rec_id in recording_ids:
             species = recordings_data[rec_id]["species"]

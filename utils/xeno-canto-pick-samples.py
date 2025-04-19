@@ -28,7 +28,7 @@ random.seed(RANDOM_SEED)
 
 
 # --- Helper Function ---
-def parse_seconds(value):
+def parse_seconds(value: str) -> float:
     """Safely convert string to float, return 0.0 on error."""
     try:
         return float(value)

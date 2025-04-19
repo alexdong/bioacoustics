@@ -1,9 +1,10 @@
 import collections
 import csv
 import os
+from typing import Dict, Set, Tuple, Optional, Union, List
 
 
-def parse_duration(duration_str):
+def parse_duration(duration_str: str) -> int:
     """Converts M:SS or H:MM:SS string to total seconds."""
     parts = duration_str.split(":")
     seconds = 0
@@ -24,7 +25,7 @@ def parse_duration(duration_str):
     return seconds
 
 
-def aggregate_species_data(file_path):
+def aggregate_species_data(file_path: str) -> Tuple[Optional[Dict], Optional[Set]]:
     """
     Aggregates recording data by species from the input CSV.
 
@@ -110,7 +111,7 @@ def aggregate_species_data(file_path):
     return species_agg_data, all_qualities
 
 
-def write_aggregated_csv(output_path, species_data, quality_codes) -> bool | None:
+def write_aggregated_csv(output_path: str, species_data: Dict, quality_codes: Set) -> Union[bool, None]:
     """
     Writes the aggregated species data to a single CSV file.
 
