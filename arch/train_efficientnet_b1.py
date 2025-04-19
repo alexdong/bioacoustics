@@ -421,7 +421,6 @@ if __name__ == "__main__":
         if wandb.run is not None:
             wandb.finish(exit_code=1)  # Mark run as failed
         sys.exit(1)  # Exit with error code
-import sys
 from typing import TypeAlias
 
 # Define Metric type alias
