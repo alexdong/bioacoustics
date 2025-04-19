@@ -1,7 +1,9 @@
 import timm
+import torch.nn as nn
+from torchinfo import summary
 
 
-def get_efficientnet_b0(num_classes=100, pretrained=False) -> None:
+def get_efficientnet_b0(num_classes: int = 100, pretrained: bool = False) -> nn.Module:
     """
     Creates an EfficientNet-B0 model adapted for 1-channel input spectrograms.
     """
@@ -14,8 +16,9 @@ def get_efficientnet_b0(num_classes=100, pretrained=False) -> None:
     )
 
     # Optional: Print model summary to verify structure and param count
-    # from torchinfo import summary
-    # # Assuming input shape (batch_size, channels, height, width)
-    # # Example: batch_size=4, channels=1, n_mels=128, time_steps=T (e.g., 313 for 5s @ 32kHz, hop 512)
+    # Assuming input shape (batch_size, channels, height, width)
+    # Example: batch_size=4, channels=1, n_mels=128, time_steps=T (e.g., 313 for 5s @ 32kHz, hop 512)
     example_input_shape = (4, 1, 512, 313)
     print(summary(model, input_size=example_input_shape))
+    
+    return model

@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any, Optional
+from typing import Optional
 
 import librosa
 import librosa.display
@@ -42,7 +42,7 @@ INIT_INTERPOLATION = "nearest"
 
 
 class MatplotlibCanvas(FigureCanvas):
-    def __init__(self, parent: Any = None, width: int = 12, height: int = 8, dpi: int = INIT_DPI) -> None:
+    def __init__(self, parent: QWidget | None = None, width: int = 12, height: int = 8, dpi: int = INIT_DPI) -> None:
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.ax = self.fig.add_subplot(111)
         super(MatplotlibCanvas, self).__init__(self.fig)

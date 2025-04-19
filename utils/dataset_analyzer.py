@@ -64,7 +64,7 @@ def analyze_audio_file(file_path: str) -> Dict[str, Any]:
         return {}
 
 
-def analyze_ml_dataset(root_dir, analyze_audio=False, max_files_per_class=100):
+def analyze_ml_dataset(root_dir: str, analyze_audio: bool = False, max_files_per_class: int = 100):
     """
     Analyzes an ML dataset directory structure and file distribution
 
@@ -170,7 +170,7 @@ def analyze_ml_dataset(root_dir, analyze_audio=False, max_files_per_class=100):
 
 
 def generate_ml_report(
-    class_counts, file_types, stats, audio_stats=None, output_file="dataset_report.png",
+    class_counts: dict, file_types: dict, stats: dict, audio_stats: dict | None = None, output_file: str = "dataset_report.png",
 ) -> None:
     """
     Generates visualization report for ML dataset analysis

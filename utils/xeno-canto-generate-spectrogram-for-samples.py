@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import Dict, List, Tuple, Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,7 +34,7 @@ S3_BUCKET_PREFIX = "s3://alexdong-bioacoustics/xeno-canto/"
 # --- Helper Functions ---
 
 
-def run_cli_command(command_list, command_desc="Command", timeout=300):
+def run_cli_command(command_list: list[str], command_desc: str = "Command", timeout: int = 300):
     """Runs a generic command line command using subprocess."""
     try:
         subprocess.run(
@@ -70,15 +71,15 @@ def run_cli_command(command_list, command_desc="Command", timeout=300):
 
 
 def generate_spectrogram(
-    audio_path,
-    output_png_path,
-    sample_rate,
-    n_fft,
-    hop_length,
-    n_mels,
-    fmin,
-    fmax,
-    power,
+    audio_path: str,
+    output_png_path: str,
+    sample_rate: int,
+    n_fft: int,
+    hop_length: int,
+    n_mels: int,
+    fmin: int | float,
+    fmax: int | float,
+    power: float,
 ):
     """Loads an audio segment, generates a Mel spectrogram, and saves as PNG."""
     try:
@@ -155,7 +156,7 @@ def generate_spectrogram(
 
 
 def download_s3_file(
-    recording_id, json_dir, s3_bucket_prefix, mp3_dir, skip_existing=True,
+    recording_id: str, json_dir: str, s3_bucket_prefix: str, mp3_dir: str, skip_existing: bool = True,
 ):
     """Downloads a single MP3 file from S3 based on its JSON metadata."""
     status = {"id": recording_id, "success": False, "reason": "", "skipped": False}
@@ -231,7 +232,7 @@ def download_s3_file(
 # --- Audio Processing Function ---
 
 
-def process_audio_files(rec_id, species_name, mp3_dir, output_dir, temp_dir):
+def process_audio_files(rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str):
     """Processes a single recording: convert, segment, generate spectrograms."""
     species_name = species_name.replace("-", "_")
 
@@ -658,7 +659,7 @@ def main() -> None:
 if __name__ == "__main__":
     # Add check for soundfile if needed by torchaudio backend
     try:
-        import soundfile as sf
+        import soundfile
     except ImportError:
         pass  # Don't warn if not present unless torchaudio fails later
     main()
