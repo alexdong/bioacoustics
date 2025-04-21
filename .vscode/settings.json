@@ -1,0 +1,32 @@
+{
+  "python.languageServer": "Pylance",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.extraCommitChars": true,
+  "python.analysis.generateWithTypeAnnotation": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "python.analysis.inlayHints.pytestParameters": true,
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.languageServerMode": "full",
+  "python.analysis.supportDocstringTemplate": true,
+  "python.analysis.typeEvaluation.analyzeUnannotatedFunctions": false,
+  "python.analysis.typeEvaluation.enableReachabilityAnalysis": true,
+  "python.analysis.typeEvaluation.strictDictionaryInference": true,
+  "python.analysis.typeEvaluation.strictListInference": true,
+  "python.analysis.typeEvaluation.strictSetInference": true,
+  "editor.defaultFormatter": "ms-python.black-formatter",
+  "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+  "notebook.defaultFormatter": "ms-python.black-formatter",
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+  "python.linting.mypyEnabled": false,
+  // Ensure Ruff linting is enabled (usually default: true)
+  "ruff.lint.enable": true,
+  "editor.formatOnSave": true, // Format when saving files
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+}
