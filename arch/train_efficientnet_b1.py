@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import Any, Dict, Optional, Tuple, TypeAlias
+from typing import Optional, Tuple, TypeAlias
 
 import torch
 import wandb
@@ -9,13 +9,8 @@ from torchmetrics.classification import MulticlassAUROC
 from torchvision.models import efficientnet_b1
 
 from utils.audio_processing import create_spectrogram_transforms
-from utils.augmentation import create_augmentation_pipeline
 from utils.config import (
-    CLASS_MAPPING_FILE,
     DATASET_BASE_DIR,
-    DEFAULT_AUG_GAUSSIAN_NOISE_P,
-    DEFAULT_AUG_PITCH_SHIFT_P,
-    DEFAULT_AUG_TIME_STRETCH_P,
     DEFAULT_EARLY_STOPPING_PATIENCE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_LR_WARMUP_EPOCHS,
@@ -24,18 +19,15 @@ from utils.config import (
     DEFAULT_WEIGHT_DECAY,
     NUM_CLASSES,
     OUTPUT_BASE_DIR,
-    PROJECT_NAME,
     SEGMENT_DURATION_S,
     TARGET_SAMPLE_RATE,
     TEMP_BASE_DIR,
 )
-from utils.data_utils import get_dataloaders, load_class_mapping
-from utils.device import select_device
-from utils.logging import log, set_log_level
+from utils.data_utils import prepare_data
+from utils.logging import log
 from utils.model_utils import count_parameters, load_checkpoint, save_checkpoint
 from utils.training_utils import (
     log_wandb_metrics,
-    setup_wandb,
     train_one_epoch,
     validate,
 )
@@ -44,11 +36,10 @@ from utils.training_utils import (
 Metric: TypeAlias = float  # Or MulticlassAUROC
 
 # --- Experiment Specific Configuration ---
-EXPERIMENT_NAME = "EfficientNet-B1_Baseline_Refactored"
+EXPERIMENT_NAME = "Architecture Comparison for Bioacoustic Classification"
 MODEL_ARCH = "EfficientNet-B1"
 
 # Training Hyperparameters (Can override defaults from config)
-BATCH_SIZE = 32
 LEARNING_RATE = DEFAULT_LEARNING_RATE
 WEIGHT_DECAY = DEFAULT_WEIGHT_DECAY
 NUM_EPOCHS = DEFAULT_NUM_EPOCHS
@@ -57,13 +48,8 @@ LR_WARMUP_EPOCHS = DEFAULT_LR_WARMUP_EPOCHS
 OPTIMIZER_CLS = DEFAULT_OPTIMIZER_CLS
 GRAD_CLIP_VALUE: Optional[float] = 1.0  # Max grad norm
 
-# Augmentation Parameters
-AUG_GAUSSIAN_NOISE_P = DEFAULT_AUG_GAUSSIAN_NOISE_P
-AUG_TIME_STRETCH_P = DEFAULT_AUG_TIME_STRETCH_P
-AUG_PITCH_SHIFT_P = DEFAULT_AUG_PITCH_SHIFT_P
-
 # --- Derived Paths ---
-OUTPUT_DIR = OUTPUT_BASE_DIR / EXPERIMENT_NAME
+OUTPUT_DIR = OUTPUT_BASE_DIR / EXPERIMENT_NAME / MODEL_ARCH  # For model outputs
 TEMP_DIR = TEMP_BASE_DIR / EXPERIMENT_NAME  # For intermediate files if needed
 BEST_MODEL_PATH = OUTPUT_DIR / f"{EXPERIMENT_NAME}_best_model.pth"
 
@@ -98,53 +84,6 @@ def get_model(num_classes: int) -> nn.Module:
 
 
 # --- Helper Functions for Orchestration ---
-
-
-def setup_environment(
-    wandb_config: Dict[str, Any],
-) -> Tuple[torch.device, Dict[str, int]]:
-    """Sets up logging, device, wandb, and loads class map."""
-    set_log_level("INFO")  # Or load from env/args
-    log("INFO", f"🐍 Starting Training Script - {EXPERIMENT_NAME}")
-    log("INFO", f"PyTorch Version: {torch.__version__}")
-    # Add torchaudio, torchvision versions if desired
-
-    device = select_device()
-    class_map = load_class_mapping(CLASS_MAPPING_FILE)
-    num_classes_actual = len(class_map)
-    assert (
-        num_classes_actual == NUM_CLASSES
-    ), f"💥 Mismatch: NUM_CLASSES constant is {NUM_CLASSES}, loaded map has {num_classes_actual}"
-
-    # Initialize WandB (Mandatory)
-    setup_wandb(wandb_config, PROJECT_NAME, EXPERIMENT_NAME)
-
-    return device, class_map
-
-
-def prepare_data(
-    class_map: Dict[str, int],
-    spectrogram_transform: nn.Module,
-    device: torch.device,  # Needed for pin_memory decision
-) -> Dict[str, torch.utils.data.DataLoader[Any]]:
-    """Prepares datasets and dataloaders."""
-    log("INFO", "Preparing datasets and dataloaders...")
-    augment_pipeline = create_augmentation_pipeline(
-        # Pass specific params if needed, assuming defaults from config/augmentation.py
-        p_gaussian_noise=AUG_GAUSSIAN_NOISE_P,
-        p_time_stretch=AUG_TIME_STRETCH_P,
-        p_pitch_shift=AUG_PITCH_SHIFT_P,
-        sample_rate=TARGET_SAMPLE_RATE,
-    )
-
-    dataloaders = get_dataloaders(
-        class_map=class_map,
-        spectrogram_transform=spectrogram_transform,
-        augment_pipeline=augment_pipeline,
-        batch_size=BATCH_SIZE,
-        pin_memory=device.type == "cuda",  # Enable pin_memory only for CUDA
-    )
-    return dataloaders
 
 
 def setup_training_components(
@@ -206,19 +145,18 @@ def train_model() -> None:
         "grad_clip_value": GRAD_CLIP_VALUE,
         "segment_duration_s": SEGMENT_DURATION_S,
         "sample_rate": TARGET_SAMPLE_RATE,
-        # Add mel spec params if desired
-        "augmentation_gaussian_p": AUG_GAUSSIAN_NOISE_P,
-        "augmentation_stretch_p": AUG_TIME_STRETCH_P,
-        "augmentation_pitch_p": AUG_PITCH_SHIFT_P,
     }
-    device, class_map = setup_environment(wandb_config)
+    device, class_map = setup_environment(EXPERIMENT_NAME, MODEL_ARCH, wandb_config)
 
     # --- Data Preparation ---
     # Create transforms once, potentially move to device if they have state
-    spectrogram_transforms = (
-        create_spectrogram_transforms()
-    )  # .to(device) # Keep on CPU for dataloader usually
-    dataloaders = prepare_data(class_map, spectrogram_transforms, device)
+    spectrogram_transforms = create_spectrogram_transforms()
+    dataloaders = prepare_data(
+        class_map=class_map,
+        spectrogram_transform=spectrogram_transforms,
+        batch_size=BATCH_SIZE,  # Pass the constant
+        pin_memory=device.type == "cuda",  # Pass the pin_memory decision
+    )
     train_loader = dataloaders["train"]
     val_loader = dataloaders["val"]
     test_loader = dataloaders["test"]

@@ -8,9 +8,36 @@ import torch
 import wandb
 from torch import nn
 from torch.utils.data import DataLoader
-from torchmetrics import Metric  # Use Metric base class for type hint
+from torchmetrics import Metric
 
-from .logging import log
+from utils.config import CLASS_MAPPING_FILE, NUM_CLASSES
+from utils.data_utils import load_class_mapping
+from utils.device import select_device
+from utils.logging import log, set_log_level
+
+
+def setup_environment(
+    experiment_name: str,
+    project_name: str,
+    wandb_config: Dict[str, Any],
+) -> Tuple[torch.device, Dict[str, int]]:
+    """Sets up logging, device, wandb, and loads class map."""
+    set_log_level("INFO")  # Or load from env/args
+    log("INFO", f"🐍 Starting Training Script - {experiment_name}")
+    log("INFO", f"PyTorch Version: {torch.__version__}")
+    # Add torchaudio, torchvision versions if desired
+
+    device = select_device()
+    class_map = load_class_mapping(CLASS_MAPPING_FILE)
+    num_classes_actual = len(class_map)
+    assert (
+        num_classes_actual == NUM_CLASSES
+    ), f"💥 Mismatch: NUM_CLASSES constant is {NUM_CLASSES}, loaded map has {num_classes_actual}"
+
+    # Initialize WandB (Mandatory)
+    setup_wandb(wandb_config, project_name, experiment_name)
+
+    return device, class_map
 
 
 def train_one_epoch(
@@ -39,7 +66,8 @@ def train_one_epoch(
         ), f"💥 Dataloader expected to yield (data, target) tuples, got {type(batch)}"
         data, target = batch
         data, target = data.to(device, non_blocking=True), target.to(
-            device, non_blocking=True,
+            device,
+            non_blocking=True,
         )
 
         optimizer.zero_grad()
@@ -121,7 +149,8 @@ def validate(
         ), f"💥 Dataloader expected to yield (data, target) tuples, got {type(batch)}"
         data, target = batch
         data, target = data.to(device, non_blocking=True), target.to(
-            device, non_blocking=True,
+            device,
+            non_blocking=True,
         )
 
         output = model(data)
@@ -174,7 +203,9 @@ def validate(
 
 
 def setup_wandb(
-    config: Dict[str, Any], project_name: str, experiment_name: str,
+    config: Dict[str, Any],
+    project_name: str,
+    experiment_name: str,
 ) -> None:
     """Initializes Weights & Biases."""
     log("INFO", "Initializing Weights & Biases... ✨")

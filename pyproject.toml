@@ -40,9 +40,11 @@ dependencies = [
     "tk>=0.1.0",
     "torch>=2.5.1",
     "torchaudio>=2.6.0",
+    "torchmetrics>=1.7.1",
     "transformers>=4.46.3",
     "unsloth>=2025.3.18; sys_platform=='linux'",
     "vllm>=0.8.2; sys_platform=='linux'",
+    "wandb>=0.19.9",
 ]
 
 [tool.setuptools.packages.find]

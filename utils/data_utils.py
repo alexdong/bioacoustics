@@ -4,7 +4,6 @@
 import json
 import os
 import random
-import typing
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
@@ -12,8 +11,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torchaudio
+from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
+from .augmentation import create_augmentation_pipeline
 from .config import (
     AUDIO_BASE_DIR,
     DATASET_BASE_DIR,
@@ -72,7 +73,10 @@ class BrazillianRandom100BirdSongDataset(Dataset[Tuple[torch.Tensor, int]]):
         try:
             # Assuming tab-separated: recording_id.ogg\tspecies_name
             self.file_list = pd.read_csv(
-                self.split_file, sep="\t", header=None, names=["filename", "species"],
+                self.split_file,
+                sep="\t",
+                header=None,
+                names=["filename", "species"],
             )
         except Exception as e:
             log("ERROR", f"💥 Failed to read split file {self.split_file}: {e}")
@@ -163,7 +167,10 @@ class BrazillianRandom100BirdSongDataset(Dataset[Tuple[torch.Tensor, int]]):
                 pad_left = padding // 2
                 pad_right = padding - pad_left
                 waveform = torch.nn.functional.pad(
-                    waveform, (pad_left, pad_right), mode="constant", value=0,
+                    waveform,
+                    (pad_left, pad_right),
+                    mode="constant",
+                    value=0,
                 )
                 log(
                     "DEBUG",
@@ -207,7 +214,8 @@ class BrazillianRandom100BirdSongDataset(Dataset[Tuple[torch.Tensor, int]]):
             )
             # Return a dummy tensor and label 0 to avoid crashing the batch loading
             dummy_spec = torch.zeros(
-                (1, N_MELS, self._expected_time_steps), dtype=torch.float32,
+                (1, N_MELS, self._expected_time_steps),
+                dtype=torch.float32,
             )
             # Perhaps return a special label like -1 if loss function handles ignores? For now, 0.
             return dummy_spec, 0
@@ -221,7 +229,8 @@ class BrazillianRandom100BirdSongDataset(Dataset[Tuple[torch.Tensor, int]]):
         if self.augmentations:
             try:
                 waveform_aug_np = self.augmentations(
-                    samples=waveform_np, sample_rate=self.sample_rate,
+                    samples=waveform_np,
+                    sample_rate=self.sample_rate,
                 )
                 waveform = torch.from_numpy(waveform_aug_np.astype(np.float32))
             except Exception as e:
@@ -268,7 +277,8 @@ class BrazillianRandom100BirdSongDataset(Dataset[Tuple[torch.Tensor, int]]):
             log("ERROR", f"💥 Spectrogram generation failed for {audio_path.name}: {e}")
             # Return dummy data again
             dummy_spec = torch.zeros(
-                (1, N_MELS, self._expected_time_steps), dtype=torch.float32,
+                (1, N_MELS, self._expected_time_steps),
+                dtype=torch.float32,
             )
             return dummy_spec, 0
 
@@ -337,4 +347,23 @@ def get_dataloaders(
             f"✅ {split.capitalize()} DataLoader created. Samples: {len(ds)}, Batches: {len(dataloaders[split])}",
         )
 
+    return dataloaders
+
+
+def prepare_data(
+    class_map: Dict[str, int],
+    spectrogram_transform: nn.Module,
+    batch_size: int,
+    pin_memory: bool,
+) -> Dict[str, DataLoader[Any]]:
+    """Prepares datasets and dataloaders."""
+    log("INFO", "Preparing datasets and dataloaders...")
+    augment_pipeline = create_augmentation_pipeline()
+    dataloaders = get_dataloaders(
+        class_map=class_map,
+        spectrogram_transform=spectrogram_transform,
+        augment_pipeline=augment_pipeline,
+        batch_size=batch_size,
+        pin_memory=pin_memory,
+    )
     return dataloaders
