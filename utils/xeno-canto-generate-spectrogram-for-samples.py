@@ -34,7 +34,9 @@ S3_BUCKET_PREFIX = "s3://alexdong-bioacoustics/xeno-canto/"
 
 
 def run_cli_command(
-    command_list: list[str], command_desc: str = "Command", timeout: int = 300,
+    command_list: list[str],
+    command_desc: str = "Command",
+    timeout: int = 300,
 ) -> tuple[bool, str]:
     """Runs a generic command line command using subprocess."""
     try:
@@ -246,7 +248,11 @@ def download_s3_file(
 
 
 def process_audio_files(
-    rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str,
+    rec_id: str,
+    species_name: str,
+    mp3_dir: str,
+    output_dir: str,
+    temp_dir: str,
 ) -> dict:
     """Processes a single recording: convert, segment, generate spectrograms."""
     species_name = species_name.replace("-", "_")

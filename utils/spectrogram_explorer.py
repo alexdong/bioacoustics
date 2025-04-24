@@ -362,7 +362,11 @@ class SpectrogramExplorer(QMainWindow):
             print(f"Saved spectrogram to {file_path}")
 
     def compute_spectrogram(
-        self, frame_length: int, hop_length: int, scale: str, n_mels: int,
+        self,
+        frame_length: int,
+        hop_length: int,
+        scale: str,
+        n_mels: int,
     ) -> Optional[np.ndarray]:
         if self.y is not None:
             if scale == "mel":

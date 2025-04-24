@@ -67,7 +67,9 @@ def analyze_audio_file(file_path: str) -> Dict[str, Any]:
 
 
 def analyze_ml_dataset(
-    root_dir: str, analyze_audio: bool = False, max_files_per_class: int = 100,
+    root_dir: str,
+    analyze_audio: bool = False,
+    max_files_per_class: int = 100,
 ) -> tuple[dict, dict, dict, dict]:
     """
     Analyzes an ML dataset directory structure and file distribution

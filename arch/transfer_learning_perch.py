@@ -49,17 +49,26 @@ import bioacoustics_model_zoo as bmz
 
 birdnet = bmz.BirdNET()
 embeddings_train = birdnet.embed(
-    labels_train, return_dfs=False, batch_size=32, num_workers=num_workers,
+    labels_train,
+    return_dfs=False,
+    batch_size=32,
+    num_workers=num_workers,
 )
 embeddings_val = birdnet.embed(
-    labels_val, return_dfs=False, batch_size=32, num_workers=num_workers,
+    labels_val,
+    return_dfs=False,
+    batch_size=32,
+    num_workers=num_workers,
 )
 
 classes = ["A"]
 birdnet.change_classes(classes)
 
 birdnet.network.fit(
-    embeddings_train, labels_train.values, embeddings_val, labels_val.values,
+    embeddings_train,
+    labels_train.values,
+    embeddings_val,
+    labels_val.values,
 )
 
 preds = birdnet.network(torch.tensor(embeddings_val)).detach()

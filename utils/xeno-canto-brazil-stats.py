@@ -112,7 +112,9 @@ def aggregate_species_data(file_path: str) -> Tuple[Optional[Dict], Optional[Set
 
 
 def write_aggregated_csv(
-    output_path: str, species_data: Dict, quality_codes: Set,
+    output_path: str,
+    species_data: Dict,
+    quality_codes: Set,
 ) -> Union[bool, None]:
     """
     Writes the aggregated species data to a single CSV file.

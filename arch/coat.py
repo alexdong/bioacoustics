@@ -5,14 +5,16 @@ from einops.layers.torch import Rearrange
 
 
 def conv_3x3_bn(inp, oup, image_size, downsample=False):
-    stride = 1 if downsample == False else 2
+    stride = 1 if downsample is False else 2
     return nn.Sequential(
-        nn.Conv2d(inp, oup, 3, stride, 1, bias=False), nn.BatchNorm2d(oup), nn.GELU(),
+        nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
+        nn.BatchNorm2d(oup),
+        nn.GELU(),
     )
 
 
 class PreNorm(nn.Module):
-    def __init__(self, dim, fn, norm):
+    def __init__(self, dim, fn, norm) -> None:
         super().__init__()
         self.norm = norm(dim)
         self.fn = fn
@@ -22,7 +24,7 @@ class PreNorm(nn.Module):
 
 
 class SE(nn.Module):
-    def __init__(self, inp, oup, expansion=0.25):
+    def __init__(self, inp, oup, expansion=0.25) -> None:
         super().__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
@@ -40,7 +42,7 @@ class SE(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout=0.0):
+    def __init__(self, dim, hidden_dim, dropout=0.0) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, hidden_dim),
@@ -55,10 +57,10 @@ class FeedForward(nn.Module):
 
 
 class MBConv(nn.Module):
-    def __init__(self, inp, oup, image_size, downsample=False, expansion=4):
+    def __init__(self, inp, oup, image_size, downsample=False, expansion=4) -> None:
         super().__init__()
         self.downsample = downsample
-        stride = 1 if self.downsample == False else 2
+        stride = 1 if self.downsample is False else 2
         hidden_dim = int(inp * expansion)
 
         if self.downsample:
@@ -69,7 +71,13 @@ class MBConv(nn.Module):
             self.conv = nn.Sequential(
                 # dw
                 nn.Conv2d(
-                    hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False,
+                    hidden_dim,
+                    hidden_dim,
+                    3,
+                    stride,
+                    1,
+                    groups=hidden_dim,
+                    bias=False,
                 ),
                 nn.BatchNorm2d(hidden_dim),
                 nn.GELU(),
@@ -86,7 +94,13 @@ class MBConv(nn.Module):
                 nn.GELU(),
                 # dw
                 nn.Conv2d(
-                    hidden_dim, hidden_dim, 3, 1, 1, groups=hidden_dim, bias=False,
+                    hidden_dim,
+                    hidden_dim,
+                    3,
+                    1,
+                    1,
+                    groups=hidden_dim,
+                    bias=False,
                 ),
                 nn.BatchNorm2d(hidden_dim),
                 nn.GELU(),
@@ -106,7 +120,7 @@ class MBConv(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, inp, oup, image_size, heads=8, dim_head=32, dropout=0.0):
+    def __init__(self, inp, oup, image_size, heads=8, dim_head=32, dropout=0.0) -> None:
         super().__init__()
         inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == inp)
@@ -149,7 +163,8 @@ class Attention(nn.Module):
 
         # Use "gather" for more efficiency on GPUs
         relative_bias = self.relative_bias_table.gather(
-            0, self.relative_index.repeat(1, self.heads),
+            0,
+            self.relative_index.repeat(1, self.heads),
         )
         relative_bias = rearrange(
             relative_bias,
@@ -168,8 +183,15 @@ class Attention(nn.Module):
 
 class Transformer(nn.Module):
     def __init__(
-        self, inp, oup, image_size, heads=8, dim_head=32, downsample=False, dropout=0.0,
-    ):
+        self,
+        inp,
+        oup,
+        image_size,
+        heads=8,
+        dim_head=32,
+        downsample=False,
+        dropout=0.0,
+    ) -> None:
         super().__init__()
         hidden_dim = int(inp * 4)
 
@@ -214,13 +236,17 @@ class CoAtNet(nn.Module):
         channels,
         num_classes=1000,
         block_types=["C", "C", "T", "T"],
-    ):
+    ) -> None:
         super().__init__()
         ih, iw = image_size
         block = {"C": MBConv, "T": Transformer}
 
         self.s0 = self._make_layer(
-            conv_3x3_bn, in_channels, channels[0], num_blocks[0], (ih // 2, iw // 2),
+            conv_3x3_bn,
+            in_channels,
+            channels[0],
+            num_blocks[0],
+            (ih // 2, iw // 2),
         )
         self.s1 = self._make_layer(
             block[block_types[0]],
