@@ -72,4 +72,20 @@ birdnet.network.fit(
 )
 
 preds = birdnet.network(torch.tensor(embeddings_val)).detach()
-roc_auc_score(labels_val.values, preds, average=None)
+score = roc_auc_score(labels_val.values, preds, average=None)
+print(score)
+
+preds = preds.detach().numpy()
+plt.hist(preds[labels_val == True], bins=20, alpha=0.5, label="positives")
+plt.hist(preds[labels_val == False], bins=20, alpha=0.5, label="negatives")
+plt.legend()
+
+birdnet.initialize_custom_classifier(hidden_layer_sizes=[100], classes=classes)
+birdnet.train(
+  train_df=labels_train,
+  validation_df=labels_val,
+  n_augmentation_variants=2,
+  embedding_batch_size=128,
+  embedding_num_workers=num_workers,
+  steps=1000
+)
