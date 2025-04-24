@@ -9,13 +9,14 @@ import sklearn
 
 from torch.jit import annotations
 from tqdm import tqdm
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import roc_auc_score
 from pathlib import Path
 
 from matplotlib import pyplot as plt
 
 plt.rcParams["figure.figsize"] = [15, 5]
 
+import opensoundscape
 from opensoundscape.ml.shallow_classifier import (
     MLPClassifier,
     quick_fit,
@@ -28,12 +29,12 @@ np.random.seed(0)
 
 num_workers = 4
 
+# Navigate up from current directory to find the level which contains `datasets`
 import os
+current_dir = Path(__file__).parent.parent
+dataset_path = Path(f"{current_dir}/datasets/rana_sierrae_2022")
+print(dataset_path)
 
-project_root = Path("/Users/alexdong/Projects/bird-songs")
-os.chdir(project_root)
-
-dataset_path = Path("./datasets/rana_sierrae_2022")
 from opensoundscape.annotations import BoxedAnnotations
 
 audio_and_raven_files = pd.read_csv(f"{dataset_path}/audio_and_raven_files.csv")
