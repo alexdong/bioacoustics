@@ -51,7 +51,8 @@ def load_and_compute_distance_matrix(
 
 # --- Helper Functions ---
 def _build_lineage_map(
-    df: pd.DataFrame, species_list: list[Species],
+    df: pd.DataFrame,
+    species_list: list[Species],
 ) -> dict[Species, Lineage]:
     """Creates a map from species name to its taxonomic lineage."""
     lineage_map: dict[Species, Lineage] = {}

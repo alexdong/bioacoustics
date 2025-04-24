@@ -1,27 +1,17 @@
+import random
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import sklearn
 import sklearn.model_selection
 import torch
-import pandas as pd
-from pathlib import Path
-import numpy as np
-import random
-from glob import glob
-import sklearn
-
-from torch.jit import annotations
-from tqdm import tqdm
-from sklearn.metrics import roc_auc_score
-from pathlib import Path
-
 from matplotlib import pyplot as plt
+from sklearn.metrics import roc_auc_score
+from torch.jit import annotations
 
 plt.rcParams["figure.figsize"] = [15, 5]
 
-import opensoundscape
-from opensoundscape.ml.shallow_classifier import (
-    MLPClassifier,
-    quick_fit,
-    fit_classifier_on_embeddings,
-)
 
 torch.manual_seed(0)
 random.seed(0)
@@ -30,7 +20,7 @@ np.random.seed(0)
 num_workers = 4
 
 # Navigate up from current directory to find the level which contains `datasets`
-import os
+
 current_dir = Path(__file__).parent.parent
 dataset_path = Path(f"{current_dir}/datasets/rana_sierrae_2022")
 print(dataset_path)
@@ -39,10 +29,10 @@ from opensoundscape.annotations import BoxedAnnotations
 
 audio_and_raven_files = pd.read_csv(f"{dataset_path}/audio_and_raven_files.csv")
 audio_and_raven_files["audio"] = audio_and_raven_files["audio"].apply(
-    lambda x: f"{dataset_path}/{x}"
+    lambda x: f"{dataset_path}/{x}",
 )
 audio_and_raven_files["raven"] = audio_and_raven_files["raven"].apply(
-    lambda x: f"{dataset_path}/{x}"
+    lambda x: f"{dataset_path}/{x}",
 )
 
 annotations = BoxedAnnotations.from_raven_files(
@@ -59,17 +49,17 @@ import bioacoustics_model_zoo as bmz
 
 birdnet = bmz.BirdNET()
 embeddings_train = birdnet.embed(
-    labels_train, return_dfs=False, batch_size=32, num_workers=num_workers
+    labels_train, return_dfs=False, batch_size=32, num_workers=num_workers,
 )
 embeddings_val = birdnet.embed(
-    labels_val, return_dfs=False, batch_size=32, num_workers=num_workers
+    labels_val, return_dfs=False, batch_size=32, num_workers=num_workers,
 )
 
 classes = ["A"]
 birdnet.change_classes(classes)
 
 birdnet.network.fit(
-    embeddings_train, labels_train.values, embeddings_val, labels_val.values
+    embeddings_train, labels_train.values, embeddings_val, labels_val.values,
 )
 
 preds = birdnet.network(torch.tensor(embeddings_val)).detach()

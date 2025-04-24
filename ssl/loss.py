@@ -65,7 +65,8 @@ def mae_reconstruction_loss(
     # Sum the squared error over the masked patches and normalize
     # Sum over channel and time dimensions, then mean over batch
     loss_per_sample = torch.sum(
-        masked_squared_error, dim=(1, 2),
+        masked_squared_error,
+        dim=(1, 2),
     )  # Sum over C, T -> Shape (B,)
     # Normalize by the number of masked elements *in each sample* (mask sum * N_MELS)
     # Add epsilon to avoid division by zero if a sample somehow has no masked frames
@@ -108,7 +109,9 @@ if __name__ == "__main__":
         print("\n[DEMO] Testing frame mismatch handling...")
         dummy_preds_short = dummy_preds[:, :-1, :]  # Shorter prediction
         loss_mismatch = mae_reconstruction_loss(
-            dummy_preds_short, dummy_targets, dummy_mask,
+            dummy_preds_short,
+            dummy_targets,
+            dummy_mask,
         )
         print(f"[DEMO] Calculated Loss (mismatch): {loss_mismatch.item()}")
 

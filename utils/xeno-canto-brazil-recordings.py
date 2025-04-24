@@ -77,7 +77,9 @@ try:
 
         # Iterate through all files using tqdm for progress bar
         for json_file_path in tqdm(
-            json_files, desc="Processing JSON files", unit="file",
+            json_files,
+            desc="Processing JSON files",
+            unit="file",
         ):
             processed_files_count += 1
 

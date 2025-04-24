@@ -9,7 +9,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
 
@@ -50,7 +51,13 @@ def parse_filename(filepath: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def create_splits(input_dir: str, output_dir: str, test_size: float = 0.1, val_size: float = 0.1, random_state: int = 42) -> None:
+def create_splits(
+    input_dir: str,
+    output_dir: str,
+    test_size: float = 0.1,
+    val_size: float = 0.1,
+    random_state: int = 42,
+) -> None:
     """
     Scans the input directory, splits data by recording ID with stratification by species,
     and saves train, validation, and test file lists (with labels) to CSV files.
@@ -147,7 +154,9 @@ def create_splits(input_dir: str, output_dir: str, test_size: float = 0.1, val_s
                 "Attempting split without stratification due to small classes...",
             )
             train_val_ids, test_ids = train_test_split(
-                unique_recording_ids, test_size=test_size, random_state=random_state,
+                unique_recording_ids,
+                test_size=test_size,
+                random_state=random_state,
             )
             # Need to re-derive species lists for the next step
             train_val_species = [

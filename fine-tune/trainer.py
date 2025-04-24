@@ -105,7 +105,10 @@ def train_model(
                 if val_loader is not None and global_step % validation_interval == 0:
                     val_start_time = time.time()
                     val_loss = _validate_epoch(
-                        model, val_loader, distance_matrix, device,
+                        model,
+                        val_loader,
+                        distance_matrix,
+                        device,
                     )
                     val_end_time = time.time()
                     print(
@@ -114,7 +117,8 @@ def train_model(
 
                     # Scheduler step (example: based on validation loss)
                     if scheduler is not None and isinstance(
-                        scheduler, ReduceLROnPlateau,
+                        scheduler,
+                        ReduceLROnPlateau,
                     ):
                         scheduler.step(val_loss)
 
@@ -178,10 +182,13 @@ if __name__ == "__main__":
             super().__init__()
             self.feature_size = feature_size
             self.config = type(
-                "obj", (object,), {"d_model": feature_size},
+                "obj",
+                (object,),
+                {"d_model": feature_size},
             )()  # Mock config
             self.dummy_layer = nn.Linear(
-                config.N_MELS * 10, self.feature_size,
+                config.N_MELS * 10,
+                self.feature_size,
             )  # Rough size match
 
         def forward(self, input_features: Tensor) -> object:
@@ -214,7 +221,9 @@ if __name__ == "__main__":
 
     dummy_encoder = DummyEncoder()
     dummy_model = model.BirdClefClassifier(
-        dummy_encoder, 128, 4,
+        dummy_encoder,
+        128,
+        4,
     )  # 4 classes for dummy dist matrix
     dummy_train_dataset = DummyDataset(
         length=40 * config.ACCUMULATE_GRAD_BATCHES,

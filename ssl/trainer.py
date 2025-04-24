@@ -150,7 +150,8 @@ if __name__ == "__main__":
     )
 
     dummy_optimizer = optim.AdamW(
-        dummy_mae_model.parameters(), lr=ssl_config.LEARNING_RATE,
+        dummy_mae_model.parameters(),
+        lr=ssl_config.LEARNING_RATE,
     )
     # Dummy scheduler (e.g., step once per 'batch' effectively)
     dummy_scheduler = CosineAnnealingLR(

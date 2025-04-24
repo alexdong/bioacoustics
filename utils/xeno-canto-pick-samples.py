@@ -204,9 +204,7 @@ try:
             except json.JSONDecodeError:
                 # print(f"\nWarning: Could not decode JSON: {json_path}")
                 errors_encountered += 1
-            except (
-                Exception
-            ):  # Catch other potential errors during file processing
+            except Exception:  # Catch other potential errors during file processing
                 # print(f"\nError processing file {json_path}: {e}")
                 errors_encountered += 1
 except Exception as e:
@@ -229,7 +227,8 @@ lines_written = 0
 with open(OUTPUT_FILE_PATH, "w", encoding="utf-8") as f_out:
     for species_name in selected_species_en:  # Iterate using the sorted list
         ids_list = species_to_ids.get(
-            species_name, [],
+            species_name,
+            [],
         )  # Get list, default to empty if somehow missing
         ids_string = ",".join(
             sorted(ids_list),

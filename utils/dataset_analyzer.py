@@ -46,7 +46,9 @@ def analyze_audio_file(file_path: str) -> Dict[str, Any]:
     """
     try:
         y, sr = librosa.load(
-            file_path, sr=None, duration=10,
+            file_path,
+            sr=None,
+            duration=10,
         )  # Load first 10 seconds for efficiency
         duration = librosa.get_duration(y=y, sr=sr)
 
@@ -64,7 +66,9 @@ def analyze_audio_file(file_path: str) -> Dict[str, Any]:
         return {}
 
 
-def analyze_ml_dataset(root_dir: str, analyze_audio: bool = False, max_files_per_class: int = 100) -> tuple[dict, dict, dict, dict]:
+def analyze_ml_dataset(
+    root_dir: str, analyze_audio: bool = False, max_files_per_class: int = 100,
+) -> tuple[dict, dict, dict, dict]:
     """
     Analyzes an ML dataset directory structure and file distribution
 
@@ -170,7 +174,11 @@ def analyze_ml_dataset(root_dir: str, analyze_audio: bool = False, max_files_per
 
 
 def generate_ml_report(
-    class_counts: dict, file_types: dict, stats: dict, audio_stats: dict | None = None, output_file: str = "dataset_report.png",
+    class_counts: dict,
+    file_types: dict,
+    stats: dict,
+    audio_stats: dict | None = None,
+    output_file: str = "dataset_report.png",
 ) -> None:
     """
     Generates visualization report for ML dataset analysis
@@ -235,10 +243,13 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "dataset_root", help="Root directory of the ML training dataset",
+        "dataset_root",
+        help="Root directory of the ML training dataset",
     )
     parser.add_argument(
-        "--graph", action="store_true", help="Generate visual analysis report",
+        "--graph",
+        action="store_true",
+        help="Generate visual analysis report",
     )
     parser.add_argument(
         "--output",
@@ -246,7 +257,9 @@ def main() -> None:
         help="Output filename for the generated report",
     )
     parser.add_argument(
-        "--audio", action="store_true", help="Analyze audio file properties",
+        "--audio",
+        action="store_true",
+        help="Analyze audio file properties",
     )
     parser.add_argument(
         "--max-files",
@@ -274,7 +287,9 @@ def main() -> None:
         print("Audio analysis enabled (this may take some time)...")
 
     class_counts, file_types, stats, audio_stats = analyze_ml_dataset(
-        args.dataset_root, analyze_audio=args.audio, max_files_per_class=args.max_files,
+        args.dataset_root,
+        analyze_audio=args.audio,
+        max_files_per_class=args.max_files,
     )
 
     # Print text report
@@ -324,7 +339,11 @@ def main() -> None:
     if args.graph:
         try:
             generate_ml_report(
-                class_counts, file_types, stats, audio_stats, args.output,
+                class_counts,
+                file_types,
+                stats,
+                audio_stats,
+                args.output,
             )
         except ImportError:
             print("Error: matplotlib is required for graph generation")

@@ -141,7 +141,10 @@ def fix_invalid_json_dates(folder_path: str, date_format: str) -> None:
                     with open(filepath, "w", encoding="utf-8") as f_write:
                         # Use indent=4 for pretty printing, adjust if needed
                         json.dump(
-                            data, f_write, indent=4, ensure_ascii=False,
+                            data,
+                            f_write,
+                            indent=4,
+                            ensure_ascii=False,
                         )  # ensure_ascii=False if you have non-ascii chars
                     files_modified += 1
                     print(f"Successfully updated: {filename}")

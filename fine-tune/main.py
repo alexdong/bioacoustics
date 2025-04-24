@@ -124,7 +124,11 @@ optimizer = optim.AdamW(
 scheduler = None
 if val_loader is not None:
     scheduler = ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.2, patience=3, verbose=True,
+        optimizer,
+        mode="min",
+        factor=0.2,
+        patience=3,
+        verbose=True,
     )
     print("[MAIN] Using ReduceLROnPlateau scheduler based on validation loss.")
 else:

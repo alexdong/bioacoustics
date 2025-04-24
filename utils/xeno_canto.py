@@ -107,7 +107,8 @@ def download_and_upload_recording(
             response.raise_for_status()
 
             content_type = response.headers.get(
-                "Content-Type", "application/octet-stream",
+                "Content-Type",
+                "application/octet-stream",
             )
             upload_to_s3(
                 s3_client,
@@ -132,7 +133,11 @@ def download_and_upload_recording(
 
 
 def fetch_and_process_pages(
-    query: str, s3_client: S3Client, bucket: str, prefix: str, start_page: int = 1,
+    query: str,
+    s3_client: S3Client,
+    bucket: str,
+    prefix: str,
+    start_page: int = 1,
 ) -> None:
     """Fetches all pages for a query and processes each recording, showing progress."""
     current_page: int = start_page
@@ -227,7 +232,11 @@ def fetch_and_process_pages(
             for recording in recordings:
                 # Pass the progress bar instance to the download function
                 download_and_upload_recording(
-                    recording, s3_client, bucket, prefix, recording_pbar,
+                    recording,
+                    s3_client,
+                    bucket,
+                    prefix,
+                    recording_pbar,
                 )
                 processed_recordings_count += 1
 
@@ -306,7 +315,11 @@ def main() -> None:
         raise
 
     fetch_and_process_pages(
-        args.query, s3_client, args.bucket, s3_prefix, args.start_page,
+        args.query,
+        s3_client,
+        args.bucket,
+        s3_prefix,
+        args.start_page,
     )
 
     print("✅ Download and upload process finished!")

@@ -28,7 +28,8 @@ def create_spectrogram_transforms() -> nn.Sequential:
     )
 
     amplitude_to_db = T.AmplitudeToDB(
-        stype="power", top_db=80,
+        stype="power",
+        top_db=80,
     )  # Convert power spec to dB
 
     # Normalize the spectrogram

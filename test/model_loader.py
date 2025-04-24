@@ -93,7 +93,8 @@ def _load_pytorch_model(
 
     # Build the base model structure (without loading SSL weights here)
     model_instance = fine_tune_model.build_model(
-        num_classes, encoder_checkpoint_path=None,
+        num_classes,
+        encoder_checkpoint_path=None,
     )
 
     # Load the fine-tuned state dict
@@ -102,7 +103,8 @@ def _load_pytorch_model(
     # state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
     try:
         missing_keys, unexpected_keys = model_instance.load_state_dict(
-            state_dict, strict=True,
+            state_dict,
+            strict=True,
         )
         # Strict=True is safer for final fine-tuned models
         if missing_keys or unexpected_keys:
@@ -135,7 +137,9 @@ def _load_quantized_model(
     # unless static quantization was used and saved differently.
     # Let's assume we load the FP32 checkpoint passed via `test_config.MODEL_CHECKPOINT_PATH`
     fp32_model = _load_pytorch_model(
-        test_config.MODEL_CHECKPOINT_PATH, num_classes, torch.device("cpu"),
+        test_config.MODEL_CHECKPOINT_PATH,
+        num_classes,
+        torch.device("cpu"),
     )
     fp32_model.eval()
 
@@ -206,7 +210,9 @@ if __name__ == "__main__":
                 # Test loading standard PyTorch model
                 print("\n[DEMO] Loading PyTorch model...")
                 pt_model = load_inference_model(
-                    "pytorch", dummy_fp32_path, dummy_device,
+                    "pytorch",
+                    dummy_fp32_path,
+                    dummy_device,
                 )
                 assert isinstance(pt_model, nn.Module)
                 print("[DEMO] PyTorch model loaded.")
@@ -218,7 +224,10 @@ if __name__ == "__main__":
                 # Need to update test_config temporarily for the demo path
                 test_config.MODEL_CHECKPOINT_PATH = dummy_fp32_path
                 int8_model = load_inference_model(
-                    "int8", dummy_fp32_path, dummy_device, quantized_path=Path("dummy"),
+                    "int8",
+                    dummy_fp32_path,
+                    dummy_device,
+                    quantized_path=Path("dummy"),
                 )
                 # Check if some layers are quantized (difficult to check type precisely)
                 # assert isinstance(int8_model.classifier_head, torch.nn.quantized.dynamic.Linear)
@@ -231,11 +240,15 @@ if __name__ == "__main__":
                     # Need example input to trace
                     frame_count = 1000  # From test data loader demo
                     example_input = torch.randn(
-                        1, test_config.N_MELS, frame_count,
+                        1,
+                        test_config.N_MELS,
+                        frame_count,
                     )  # Batch size 1
                     # Load the FP32 model again for tracing
                     pt_model_cpu = _load_pytorch_model(
-                        dummy_fp32_path, n_classes_demo, torch.device("cpu"),
+                        dummy_fp32_path,
+                        n_classes_demo,
+                        torch.device("cpu"),
                     )
                     pt_model_cpu.eval()
                     traced_model = torch.jit.trace(pt_model_cpu, example_input)

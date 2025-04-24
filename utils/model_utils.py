@@ -57,7 +57,8 @@ def load_checkpoint(
 
         start_epoch = checkpoint.get("epoch", 0)  # Default to 0 if not found
         best_metric_value = checkpoint.get(
-            "best_metric_value", 0.0,
+            "best_metric_value",
+            0.0,
         )  # Default if not found
 
         if optimizer and "optimizer_state_dict" in checkpoint:

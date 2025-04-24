@@ -77,7 +77,8 @@ def hierarchical_distance_loss(
                 # [:, true_pos_indices]: Slice columns for TPs
                 # Result: (num_fp, num_tp) matrix of distances
                 fp_to_tp_distances = dist_matrix_dev[false_pos_indices][
-                    :, true_pos_indices,
+                    :,
+                    true_pos_indices,
                 ]
 
                 # Find the minimum distance for each FP row
@@ -154,7 +155,8 @@ if __name__ == "__main__":
         )
         # Should be equivalent to standard BCEWithLogitsLoss in this case
         standard_bce = functional.binary_cross_entropy_with_logits(
-            dummy_logits, dummy_targets_no_tp,
+            dummy_logits,
+            dummy_targets_no_tp,
         )
         print(f"\n[DEMO] Loss with no TPs: {loss_no_tp.item()}")
         print(f"[DEMO] Standard BCE (no TPs): {standard_bce.item()}")

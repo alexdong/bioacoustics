@@ -83,7 +83,8 @@ def load_model_for_inference(
         print(f"[WARNING] Strict loading failed: {e}")
         print("[WARNING] Attempting non-strict loading as fallback")
         missing_keys, unexpected_keys = model_instance.load_state_dict(
-            state_dict, strict=False,
+            state_dict,
+            strict=False,
         )
         if missing_keys:
             print(
@@ -121,7 +122,9 @@ if __name__ == "__main__":
     # 2. Load the model
     try:
         loaded_model = load_model_for_inference(
-            dummy_checkpoint_path, n_classes_demo, dummy_device,
+            dummy_checkpoint_path,
+            n_classes_demo,
+            dummy_device,
         )
         print("[DEMO] Model loaded successfully for inference.")
 

@@ -80,7 +80,8 @@ def main() -> None:
     )
     parser.add_argument("url", help="The URL of the page containing links to files.")
     parser.add_argument(
-        "extension", help="The file extension to download (e.g., .mp3, .pdf, *.jpg).",
+        "extension",
+        help="The file extension to download (e.g., .mp3, .pdf, *.jpg).",
     )
     parser.add_argument(
         "-o",

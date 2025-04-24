@@ -33,11 +33,17 @@ S3_BUCKET_PREFIX = "s3://alexdong-bioacoustics/xeno-canto/"
 # --- Helper Functions ---
 
 
-def run_cli_command(command_list: list[str], command_desc: str = "Command", timeout: int = 300) -> tuple[bool, str]:
+def run_cli_command(
+    command_list: list[str], command_desc: str = "Command", timeout: int = 300,
+) -> tuple[bool, str]:
     """Runs a generic command line command using subprocess."""
     try:
         subprocess.run(
-            command_list, check=True, capture_output=True, text=True, timeout=timeout,
+            command_list,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
         )
         return True, ""
     except subprocess.TimeoutExpired:
@@ -105,7 +111,8 @@ def generate_spectrogram(
             normalized=False,
         )
         amplitude_to_db_transform = torchaudio.transforms.AmplitudeToDB(
-            stype="power", top_db=80,
+            stype="power",
+            top_db=80,
         )
 
         mel_spec = mel_spectrogram_transform(waveform)
@@ -128,7 +135,10 @@ def generate_spectrogram(
         plt.axis("off")
         fig.patch.set_alpha(0)
         plt.savefig(
-            output_png_path, bbox_inches="tight", pad_inches=0, transparent=True,
+            output_png_path,
+            bbox_inches="tight",
+            pad_inches=0,
+            transparent=True,
         )
         plt.close(fig)
 
@@ -155,7 +165,11 @@ def generate_spectrogram(
 
 
 def download_s3_file(
-    recording_id: str, json_dir: str, s3_bucket_prefix: str, mp3_dir: str, skip_existing: bool = True,
+    recording_id: str,
+    json_dir: str,
+    s3_bucket_prefix: str,
+    mp3_dir: str,
+    skip_existing: bool = True,
 ) -> dict:
     """Downloads a single MP3 file from S3 based on its JSON metadata."""
     status = {"id": recording_id, "success": False, "reason": "", "skipped": False}
@@ -231,7 +245,9 @@ def download_s3_file(
 # --- Audio Processing Function ---
 
 
-def process_audio_files(rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str) -> dict:
+def process_audio_files(
+    rec_id: str, species_name: str, mp3_dir: str, output_dir: str, temp_dir: str,
+) -> dict:
     """Processes a single recording: convert, segment, generate spectrograms."""
     species_name = species_name.replace("-", "_")
 
@@ -591,7 +607,9 @@ def main() -> None:
             executor.submit(process_audio_files, *task): task for task in audio_tasks
         }
         for future in tqdm(
-            as_completed(futures), total=len(audio_tasks), desc="Processing Audio",
+            as_completed(futures),
+            total=len(audio_tasks),
+            desc="Processing Audio",
         ):
             try:
                 result = future.result()
@@ -659,6 +677,7 @@ if __name__ == "__main__":
     # Add check for soundfile if needed by torchaudio backend
     try:
         import importlib.util
+
         has_soundfile = importlib.util.find_spec("soundfile") is not None
     except ImportError:
         has_soundfile = False

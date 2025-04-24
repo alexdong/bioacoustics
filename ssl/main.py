@@ -58,7 +58,9 @@ num_training_steps = (
     len(ssl_loader) // ssl_config.ACCUMULATE_GRAD_BATCHES
 ) * ssl_config.NUM_EPOCHS
 scheduler = CosineAnnealingLR(
-    optimizer, T_max=num_training_steps, eta_min=1e-6,
+    optimizer,
+    T_max=num_training_steps,
+    eta_min=1e-6,
 )  # Decay to near zero
 print(f"[SSL MAIN] Using CosineAnnealingLR scheduler over {num_training_steps} steps.")
 

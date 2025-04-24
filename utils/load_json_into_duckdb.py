@@ -69,7 +69,8 @@ for i in range(0, total_files, batch_size):
         # Pass the explicit LIST of filenames for this batch as a parameter
         # read_json_auto([file1, file2, ...]) is the syntax needed
         con.execute(
-            f"INSERT INTO {table_name} SELECT * FROM read_json_auto(?);", [batch_files],
+            f"INSERT INTO {table_name} SELECT * FROM read_json_auto(?);",
+            [batch_files],
         )
         print(" Done.")
     except Exception as e:

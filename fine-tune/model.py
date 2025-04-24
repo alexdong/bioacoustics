@@ -53,7 +53,8 @@ def build_model(
             # Adapt keys if necessary (e.g., if saved with 'module.' prefix from DDP)
             # state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
             missing_keys, unexpected_keys = encoder.load_state_dict(
-                state_dict, strict=False,
+                state_dict,
+                strict=False,
             )
             if missing_keys:
                 print(
@@ -82,7 +83,10 @@ def build_model(
 
     # Build the full model
     model = BirdClefClassifier(
-        encoder, encoder_feature_size, num_classes, config.POOLING_TYPE,
+        encoder,
+        encoder_feature_size,
+        num_classes,
+        config.POOLING_TYPE,
     )
     print("[MODEL] Model built successfully.")
     return model
@@ -169,7 +173,8 @@ if __name__ == "__main__":
         print("[DEMO] Building model without pre-trained encoder weights...")
         # NOTE: This will download the base whisper model if not cached
         model_demo = build_model(
-            n_classes_demo, encoder_checkpoint_path=None,
+            n_classes_demo,
+            encoder_checkpoint_path=None,
         )  # Use base whisper
         print(f"[DEMO] Model:\n{model_demo}")
 

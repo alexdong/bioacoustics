@@ -150,7 +150,10 @@ def run_inference(
             original_order_df["row_id"],
         ), "Mismatch between processed and expected row IDs"
         submission_df = pd.merge(
-            original_order_df, submission_df, on="row_id", how="left",
+            original_order_df,
+            submission_df,
+            on="row_id",
+            how="left",
         )
         print("[INFERENCE] Reordered submission based on sample_submission.csv")
 

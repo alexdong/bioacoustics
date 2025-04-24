@@ -112,7 +112,8 @@ def download_audio(session: requests.Session, record: Dict[str, Any]) -> bool:
 
 
 def fetch_records_page(
-    session: requests.Session, offset: int,
+    session: requests.Session,
+    offset: int,
 ) -> Tuple[List[Dict[str, Any]], bool]:
     """Fetch a page of records from the API.
 

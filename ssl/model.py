@@ -95,7 +95,9 @@ class SimpleMAEDecoder(nn.Module):
 
         self.decoder_norm = nn.LayerNorm(decoder_embed_dim)
         self.decoder_pred = nn.Linear(
-            decoder_embed_dim, output_patch_dim, bias=True,
+            decoder_embed_dim,
+            output_patch_dim,
+            bias=True,
         )  # Predict N_MELS
 
         # Initialize mask token and potentially pos embeds
@@ -120,7 +122,9 @@ class SimpleMAEDecoder(nn.Module):
 
         # Create mask token expanded to match batch size and embedding dimension
         mask_token_expanded = self.mask_token.expand(
-            batch_size, 1, -1,
+            batch_size,
+            1,
+            -1,
         )  # (batch, 1, decoder_dim)
 
         # Create a properly expanded mask for broadcasting
@@ -133,7 +137,9 @@ class SimpleMAEDecoder(nn.Module):
         # For positions where mask_expanded is 0, use encoder features
         # We need to expand mask_token to all masked positions
         mask_tokens = mask_token_expanded.repeat(
-            1, total_frames, 1,
+            1,
+            total_frames,
+            1,
         )  # (batch, total_frames, decoder_dim)
         x = x * (1 - mask_expanded) + mask_tokens * mask_expanded
 

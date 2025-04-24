@@ -42,7 +42,13 @@ INIT_INTERPOLATION = "nearest"
 
 
 class MatplotlibCanvas(FigureCanvas):
-    def __init__(self, parent: QWidget | None = None, width: int = 12, height: int = 8, dpi: int = INIT_DPI) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        width: int = 12,
+        height: int = 8,
+        dpi: int = INIT_DPI,
+    ) -> None:
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.ax = self.fig.add_subplot(111)
         super(MatplotlibCanvas, self).__init__(self.fig)
@@ -355,7 +361,9 @@ class SpectrogramExplorer(QMainWindow):
             self.canvas.fig.savefig(file_path, dpi=save_dpi, bbox_inches="tight")
             print(f"Saved spectrogram to {file_path}")
 
-    def compute_spectrogram(self, frame_length: int, hop_length: int, scale: str, n_mels: int) -> Optional[np.ndarray]:
+    def compute_spectrogram(
+        self, frame_length: int, hop_length: int, scale: str, n_mels: int,
+    ) -> Optional[np.ndarray]:
         if self.y is not None:
             if scale == "mel":
                 S = librosa.feature.melspectrogram(
@@ -397,7 +405,10 @@ class SpectrogramExplorer(QMainWindow):
 
         # Compute spectrogram
         D = self.compute_spectrogram(
-            frame_length, hop_length, self.current_scale, n_mels,
+            frame_length,
+            hop_length,
+            self.current_scale,
+            n_mels,
         )
 
         if D is not None:
