@@ -8,23 +8,12 @@ from bs4 import BeautifulSoup
 from utils.download_utils import download_file, ensure_directory
 
 
-def find_and_download_files(
-    base_url: str,
-    file_extension: str,
-    output_dir: str,
-) -> tuple[int, int]:
+def find_and_download_files(base_url: str, output_dir: str) -> tuple[int, int]:
     """Find and download all files with the specified extension from a URL.
 
     Returns:
         Tuple of (links_found, links_downloaded)
     """
-    # Standardize extension (remove *, ensure leading .)
-    if file_extension.startswith("*"):
-        file_extension = file_extension[1:]
-    if not file_extension.startswith("."):
-        file_extension = "." + file_extension
-    file_extension = file_extension.lower()  # Make comparison case-insensitive
-
     print(f"[*] Fetching page: {base_url}")
     try:
         response = requests.get(base_url, timeout=30)
@@ -42,7 +31,6 @@ def find_and_download_files(
     # Ensure output directory exists
     output_path = ensure_directory(output_dir)
 
-    print(f"[*] Searching for links ending with '{file_extension}'...")
     # Find all 'a' tags with an 'href' attribute
     for link in soup.find_all("a", href=True):
         href = link["href"]
@@ -50,26 +38,21 @@ def find_and_download_files(
         # Construct the absolute URL
         # urljoin handles both absolute (http://...) and relative (/path/to/file, file.ext) links
         absolute_url = urljoin(base_url, href)
+        print(f"-> Found link: {absolute_url}")
 
-        # Check if the absolute URL ends with the desired extension (case-insensitive)
-        parsed_link_url = urlparse(absolute_url)
-        if parsed_link_url.path.lower().endswith(file_extension):
-            links_found += 1
+        # Check if the absolute URL contains the desired extension (case-insensitive)
+        link_url = urlparse(absolute_url)
+        filename = os.path.basename(link_url.path)
+        if not filename or not filename.endswith((".ogg", ".wav", ".mp3", ".flac")):
+            continue
 
-            # Get the filename from the URL
-            filename = os.path.basename(parsed_link_url.path)
-            if not filename:
-                print(
-                    f"-> Could not determine filename for URL: {absolute_url}. Skipping.",
-                )
-                continue
+        links_found += 1
+        local_filepath = output_path / filename
 
-            local_filepath = output_path / filename
-
-            print(f"\n[*] Found potential file: {absolute_url}")
-            if download_file(absolute_url, local_filepath):
-                print(f"--> Successfully saved to {local_filepath}")
-                links_downloaded += 1
+        print(f"\n[*] Found potential file: {absolute_url}")
+        if download_file(absolute_url, local_filepath):
+            print(f"--> Successfully saved to {local_filepath}")
+            links_downloaded += 1
 
     return links_found, links_downloaded
 
@@ -80,23 +63,15 @@ def main() -> None:
     )
     parser.add_argument("url", help="The URL of the page containing links to files.")
     parser.add_argument(
-        "extension",
-        help="The file extension to download (e.g., .mp3, .pdf, *.jpg).",
-    )
-    parser.add_argument(
         "-o",
         "--output-dir",
-        default="downloads",
-        help="Directory to save downloaded files (default: ./downloads).",
+        default="datasets",
+        help="Directory to save downloaded files (default: ./datasets).",
     )
 
     args = parser.parse_args()
-
-    links_found, links_downloaded = find_and_download_files(
-        args.url,
-        args.extension,
-        args.output_dir,
-    )
+    print(args.output_dir)
+    links_found, links_downloaded = find_and_download_files(args.url, args.output_dir)
 
     print("\n[*] --- Summary ---")
     if links_found == 0:
